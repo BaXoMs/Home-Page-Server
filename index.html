@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NodeR · Fireman Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'><path d='M13 2L3 14h9l-1 8 10-12h-9l1-8z'/></svg>">
+</head>
+<body>
+  <div class="dashboard-wrapper">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <h1 class="header-title">NodeR <span class="dot">·</span> <span class="subtitle">Fireman dashboard</span></h1>
+      </div>
+      <div class="header-actions">
+        <button id="btn-notifications" class="action-btn" title="Notificaciones" aria-label="Notificaciones">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notification-badge"></span>
+        </button>
+        <button id="btn-settings" class="action-btn" title="Ajustes de Infraestructura" aria-label="Ajustes">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
+        <button id="btn-profile" class="action-btn" title="Perfil de Operador" aria-label="Usuario">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- KPI Row -->
+    <section class="kpi-grid">
+      <!-- Proxmox -->
+      <div class="kpi-card" id="kpi-proxmox" onclick="openService('proxmox')">
+        <div class="kpi-label">Proxmox</div>
+        <div class="kpi-value text-green">online</div>
+      </div>
+
+      <!-- Alertas Wazuh -->
+      <div class="kpi-card" id="kpi-wazuh" onclick="openService('wazuh')">
+        <div class="kpi-label">Alertas Wazuh (24h)</div>
+        <div class="kpi-value text-white" id="wazuh-count">37</div>
+      </div>
+
+      <!-- Vulns Nessus -->
+      <div class="kpi-card" id="kpi-nessus" onclick="openService('nessus')">
+        <div class="kpi-label">Vulns Nessus</div>
+        <div class="kpi-value text-coral">12 crit</div>
+      </div>
+
+      <!-- Uptime NodeR -->
+      <div class="kpi-card" id="kpi-uptime" onclick="openService('portainer')">
+        <div class="kpi-label">Uptime NodeR</div>
+        <div class="kpi-value text-cyan">99.8%</div>
+      </div>
+    </section>
+
+    <!-- Main Charts Section -->
+    <section class="charts-grid">
+      <!-- Network Traffic Chart -->
+      <div class="chart-card traffic-card">
+        <div class="chart-header">
+          <h2 class="chart-title">Tráfico de red — VLANs (últimas 12h)</h2>
+        </div>
+        <div class="chart-body" id="traffic-chart-container">
+          <svg id="traffic-svg" viewBox="0 0 650 200" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="cyan-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00f2fe" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#00f2fe" stop-opacity="0.0"/>
+              </linearGradient>
+              <linearGradient id="blue-gradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#2563eb" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#2563eb" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            <!-- Background grid lines -->
+            <line x1="0" y1="50" x2="650" y2="50" stroke="#162238" stroke-width="1" stroke-dasharray="4"/>
+            <line x1="0" y1="110" x2="650" y2="110" stroke="#162238" stroke-width="1" stroke-dasharray="4"/>
+            <line x1="0" y1="170" x2="650" y2="170" stroke="#162238" stroke-width="1" stroke-dasharray="4"/>
+            <!-- Paths injected by JS -->
+            <path id="path-byod-area" fill="url(#blue-gradient)" d=""></path>
+            <path id="path-byod-line" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" d=""></path>
+            <path id="path-corp-area" fill="url(#cyan-gradient)" d=""></path>
+            <path id="path-corp-line" fill="none" stroke="#00f2fe" stroke-width="2.5" stroke-linecap="round" d=""></path>
+          </svg>
+          <div id="chart-tooltip" class="chart-tooltip"></div>
+        </div>
+        <div class="chart-footer">
+          <button class="filter-tab active" id="tab-corp" onclick="switchTrafficLayer('corp')">
+            CORP + Servers
+          </button>
+          <button class="filter-tab" id="tab-byod" onclick="switchTrafficLayer('byod')">
+            BYOD + CCTV
+          </button>
+        </div>
+      </div>
+
+      <!-- Vulnerabilities by VLAN -->
+      <div class="chart-card vulns-card">
+        <div class="chart-header">
+          <h2 class="chart-title">Vulns por VLAN</h2>
+        </div>
+        <div class="chart-body vulns-body">
+          <div class="bars-container">
+            <!-- V10 Bar -->
+            <div class="bar-group" data-vlan="V10" data-label="Servers" data-vulns="28">
+              <div class="bar-wrapper">
+                <div class="bar bar-cyan" style="height: 58%;"></div>
+              </div>
+              <span class="bar-label">V10</span>
+            </div>
+
+            <!-- V20 Bar -->
+            <div class="bar-group" data-vlan="V20" data-label="Corp Users" data-vulns="14">
+              <div class="bar-wrapper">
+                <div class="bar bar-blue" style="height: 35%;"></div>
+              </div>
+              <span class="bar-label">V20</span>
+            </div>
+
+            <!-- V40 Bar -->
+            <div class="bar-group" data-vlan="V40" data-label="DMZ / Lab" data-vulns="46">
+              <div class="bar-wrapper">
+                <div class="bar bar-coral" style="height: 92%;"></div>
+              </div>
+              <span class="bar-label">V40</span>
+            </div>
+
+            <!-- V50 Bar -->
+            <div class="bar-group" data-vlan="V50" data-label="CCTV & IoT" data-vulns="24">
+              <div class="bar-wrapper">
+                <div class="bar bar-teal" style="height: 50%;"></div>
+              </div>
+              <span class="bar-label">V50</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Bottom Quick Launch Cards -->
+    <nav class="services-nav">
+      <!-- Proxmox -->
+      <button class="service-button" onclick="openService('proxmox')">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+            <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+            <line x1="6" y1="6" x2="6.01" y2="6"></line>
+            <line x1="6" y1="18" x2="6.01" y2="18"></line>
+          </svg>
+        </div>
+        <span class="service-title">Proxmox</span>
+      </button>
+
+      <!-- Wazuh -->
+      <button class="service-button" onclick="openService('wazuh')">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <span class="service-title">Wazuh</span>
+      </button>
+
+      <!-- Nessus -->
+      <button class="service-button" onclick="openService('nessus')">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="8" y="6" width="8" height="14" rx="4"></rect>
+            <path d="M19 7l-3 2"></path>
+            <path d="M5 7l3 2"></path>
+            <path d="M19 19l-3-2"></path>
+            <path d="M5 19l3-2"></path>
+            <path d="M20 13h-4"></path>
+            <path d="M4 13h4"></path>
+            <path d="M10 4l-1-2"></path>
+            <path d="M14 4l1-2"></path>
+          </svg>
+        </div>
+        <span class="service-title">Nessus</span>
+      </button>
+
+      <!-- Watchtower -->
+      <button class="service-button" onclick="openService('watchtower')">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.5 2v6h-6"></path>
+            <path d="M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+          </svg>
+        </div>
+        <span class="service-title">Watchtower</span>
+      </button>
+
+      <!-- CCTV / IoT -->
+      <button class="service-button" onclick="openService('cctv')">
+        <div class="service-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+            <circle cx="12" cy="13" r="4"></circle>
+          </svg>
+        </div>
+        <span class="service-title">CCTV/IoT</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="modal-settings" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Ajustes de Infraestructura</h3>
+        <button class="modal-close" onclick="closeModal('modal-settings')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>IP Tailscale Proxmox (jj)</label>
+          <input type="text" id="cfg-proxmox" value="https://100.77.123.25:8006">
+        </div>
+        <div class="form-group">
+          <label>IP Tailscale NodeR (Raspberry Pi)</label>
+          <input type="text" id="cfg-noder" value="http://100.120.34.14:9000">
+        </div>
+        <div class="form-group">
+          <label>URL Consola Wazuh (SOC)</label>
+          <input type="text" id="cfg-wazuh" value="https://10.10.60.88">
+        </div>
+        <div class="form-group">
+          <label>URL Tenable Nessus (VM 107)</label>
+          <input type="text" id="cfg-nessus" value="https://10.10.60.88:8834">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-settings')">Cerrar</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Service Action Modal -->
+  <div id="modal-service" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-service-title">Servicio</h3>
+        <button class="modal-close" onclick="closeModal('modal-service')">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-service-body">
+        <!-- Injected via JS -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-service')">Cancelar</button>
+        <a id="modal-service-link" href="#" target="_blank" class="btn btn-primary">Abrir Servicio</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+/* ==========================================================================
+   NodeR · Fireman Dashboard Design System
+   Matches the pixel-perfect SOC/NOC single-page design spec
+   ========================================================================== */
+
+:root {
+  /* Color Palette */
+  --bg-app: #060911;
+  --bg-surface: #0b1120;
+  --bg-card: #0f172a;
+  --bg-card-hover: #15223c;
+  --border-card: #19263e;
+  --border-focus: #00f2fe;
+
+  /* Typography Colors */
+  --text-main: #f8fafc;
+  --text-muted: #64748b;
+  --text-dim: #475569;
+
+  /* Status & Accent Colors */
+  --accent-cyan: #00f2fe;
+  --accent-cyan-dim: rgba(0, 242, 254, 0.15);
+  --accent-green: #22c55e;
+  --accent-coral: #ff6363;
+  --accent-blue: #3b82f6;
+  --accent-teal: #38bdf8;
+
+  /* Transitions & Shadows */
+  --transition-fast: 0.15s ease;
+  --transition-smooth: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 25px rgba(0, 242, 254, 0.15);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: hidden;
+  padding: 16px;
+}
+
+/* ==========================================================================
+   Dashboard Container (Single-Screen Architecture)
+   ========================================================================== */
+
+.dashboard-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  height: 95vh;
+  max-height: 850px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 6px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.5));
+}
+
+.logo-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.header-title .dot {
+  color: var(--text-dim);
+  margin: 0 4px;
+}
+
+.header-title .subtitle {
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition-fast);
+}
+
+.action-btn:hover {
+  color: var(--text-main);
+  background: var(--border-card);
+}
+
+.action-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--accent-cyan);
+}
+
+/* ==========================================================================
+   KPI Grid (Row 1)
+   ========================================================================== */
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-height: 100px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-card);
+}
+
+.kpi-card:hover {
+  border-color: #2a3c61;
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: -0.01em;
+}
+
+.kpi-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.text-green {
+  color: var(--accent-green);
+  text-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+}
+
+.text-white {
+  color: #ffffff;
+}
+
+.text-coral {
+  color: var(--accent-coral);
+  text-shadow: 0 0 16px rgba(255, 99, 99, 0.35);
+}
+
+.text-cyan {
+  color: var(--accent-cyan);
+  text-shadow: 0 0 16px rgba(0, 242, 254, 0.35);
+}
+
+/* ==========================================================================
+   Charts Section (Row 2)
+   ========================================================================== */
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+  flex: 1;
+}
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.chart-header {
+  margin-bottom: 12px;
+}
+
+.chart-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: -0.01em;
+}
+
+/* Traffic Chart */
+
+.traffic-card {
+  position: relative;
+}
+
+.chart-body {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+#traffic-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.chart-footer {
+  display: flex;
+  gap: 20px;
+  padding-top: 10px;
+  margin-top: auto;
+}
+
+.filter-tab {
+  background: transparent;
+  border: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 0;
+  transition: var(--transition-fast);
+  position: relative;
+}
+
+.filter-tab.active {
+  color: var(--accent-cyan);
+}
+
+.filter-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+  box-shadow: 0 0 6px var(--accent-cyan);
+}
+
+.filter-tab:hover:not(.active) {
+  color: var(--text-muted);
+}
+
+/* Tooltip */
+.chart-tooltip {
+  position: absolute;
+  display: none;
+  background: #090e1a;
+  border: 1px solid var(--border-card);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: #ffffff;
+  pointer-events: none;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+/* Vulns by VLAN Bar Chart */
+
+.vulns-body {
+  padding: 10px 0;
+}
+
+.bars-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  gap: 16px;
+  padding: 0 10px;
+}
+
+.bar-group {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.bar-wrapper {
+  width: 100%;
+  max-width: 65px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), filter var(--transition-fast);
+}
+
+.bar:hover {
+  filter: brightness(1.2);
+}
+
+.bar-cyan {
+  background: #00e5ff;
+}
+
+.bar-blue {
+  background: #3b82f6;
+}
+
+.bar-coral {
+  background: #ff6363;
+}
+
+.bar-teal {
+  background: #4a7cf6;
+}
+
+.bar-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ==========================================================================
+   Services Navigation (Row 3)
+   ========================================================================== */
+
+.services-nav {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+}
+
+.service-button {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 14px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  box-shadow: var(--shadow-card);
+}
+
+.service-button:hover {
+  background: var(--bg-card-hover);
+  border-color: #2b3d63;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.service-icon {
+  width: 32px;
+  height: 32px;
+  color: var(--accent-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.4));
+}
+
+.service-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.service-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #94a3b8;
+  letter-spacing: -0.01em;
+}
+
+.service-button:hover .service-title {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   Modals
+   ========================================================================== */
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(4, 7, 14, 0.8);
+  backdrop-filter: blur(8px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.modal-backdrop.active {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-card);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.form-group input {
+  background: #090e1a;
+  border: 1px solid var(--border-card);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #ffffff;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.form-group input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.2);
+}
+
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-card);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+.btn-secondary {
+  background: #1e293b;
+  color: #cbd5e1;
+}
+
+.btn-secondary:hover {
+  background: #28374f;
+  color: #ffffff;
+}
+
+.btn-primary {
+  background: var(--accent-cyan);
+  color: #060911;
+}
+
+.btn-primary:hover {
+  background: #38f6ff;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.4);
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+
+@media (max-width: 900px) {
+  .dashboard-wrapper {
+    height: auto;
+    max-height: none;
+  }
+
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .traffic-card {
+    min-height: 240px;
+  }
+
+  .vulns-card {
+    min-height: 220px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .services-nav {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .services-nav {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

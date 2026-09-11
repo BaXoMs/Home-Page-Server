@@ -1,0 +1,15 @@
+---
+title: "NodeR · Fireman Dashboard"
+background: "#060911"
+theme: dark
+color: slate
+layout:
+  Red & DNS:
+    style: row
+    columns: 2
+  Seguridad & SOC:
+    style: row
+    columns: 2
+  Monitoreo & Virtualizacion:
+    style: row
+    columns: 2

@@ -1,0 +1,53 @@
+---
+- Red & DNS:
+    - AdGuard Home:
+        icon: adguard-home.png
+        href: http://100.120.34.14:3000
+        description: Servidor DNS y bloqueo de telemetría
+        server: my-docker
+        container: adguardhome
+
+    - Nginx Proxy Manager:
+        icon: nginx-proxy-manager.png
+        href: http://100.120.34.14:81
+        description: Reverse Proxy & Terminación SSL
+        server: my-docker
+        container: nginx-proxy-manager
+
+- Seguridad & SOC:
+    - Wazuh SOC:
+        icon: wazuh.png
+        href: https://10.10.60.88
+        description: Monitoreo SIEM & Detección de Amenazas
+
+    - Tenable Nessus:
+        icon: nessus.png
+        href: https://10.10.60.88:8834
+        description: Escáner de Vulnerabilidades (VM 107)
+
+- Monitoreo & Virtualizacion:
+    - Proxmox VE:
+        icon: proxmox.png
+        href: https://100.77.123.25:8006
+        description: Hipervisor de Virtualización jj
+
+    - Portainer:
+        icon: portainer.png
+        href: http://100.120.34.14:9000
+        description: Control de Contenedores NodeR
+        server: my-docker
+        container: portainer
+
+    - Uptime Kuma:
+        icon: uptime-kuma.png
+        href: http://100.120.34.14:3001
+        description: Monitor de Disponibilidad y SLAs
+        server: my-docker
+        container: uptime-kuma
+
+    - Vaultwarden:
+        icon: vaultwarden.png
+        href: http://100.120.34.14:8080
+        description: Gestor de Contraseñas Seguro
+        server: my-docker
+        container: vaultwarden

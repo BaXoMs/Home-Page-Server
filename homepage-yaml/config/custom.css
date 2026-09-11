@@ -1,0 +1,23 @@
+/* Custom SOC/NOC Theme for gethomepage */
+:root {
+  --theme-background: #060911 !important;
+  --theme-card-background: #0f172a !important;
+  --theme-card-border: #19263e !important;
+  --theme-accent: #00f2fe !important;
+}
+
+body {
+  background-color: #060911 !important;
+  font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.service-card {
+  border: 1px solid #19263e !important;
+  border-radius: 14px !important;
+  transition: transform 0.2s ease, border-color 0.2s ease !important;
+}
+
+.service-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: #00f2fe !important;
+}
