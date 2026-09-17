@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Home-Page-Server · Control Center</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,8 +12,11 @@
 </head>
 <body>
   <div class="app-layout">
+    <!-- Mobile Sidebar Backdrop Overlay -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileMenu()"></div>
+
     <!-- Sidebar Navigation -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="app-sidebar">
       <div class="sidebar-header">
         <div class="brand-logo">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -25,6 +28,7 @@
           <span class="brand-title">Home-Page</span>
           <span class="brand-subtitle">Server Control</span>
         </div>
+        <button class="sidebar-close-btn" id="btn-sidebar-close" onclick="closeMobileMenu()" aria-label="Cerrar menú">&times;</button>
       </div>
 
       <nav class="sidebar-nav">
@@ -101,9 +105,18 @@
     <main class="main-content">
       <!-- Top Bar Header -->
       <header class="topbar">
-        <div class="view-heading">
-          <h1 id="view-title">Tráfico & Resumen de Red</h1>
-          <p id="view-subtitle">Telemetría de ancho de banda y salud general de los servidores</p>
+        <div class="topbar-left">
+          <button class="action-btn menu-toggle-btn" id="btn-menu-toggle" title="Abrir menú de navegación" onclick="toggleMobileMenu()" aria-label="Abrir menú">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+          <div class="view-heading">
+            <h1 id="view-title">Tráfico & Resumen de Red</h1>
+            <p id="view-subtitle">Telemetría de ancho de banda y salud general de los servidores</p>
+          </div>
         </div>
 
         <div class="topbar-actions">

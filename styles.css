@@ -71,6 +71,44 @@ body {
   gap: 12px;
   padding: 0 8px 24px 8px;
   border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+}
+
+.sidebar-close-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+
+.sidebar-close-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 14, 0.75);
+  backdrop-filter: blur(4px);
+  z-index: 990;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
+}
+
+.sidebar-backdrop.active {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .brand-logo {
@@ -198,6 +236,17 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.menu-toggle-btn {
+  display: none;
+  flex-shrink: 0;
 }
 
 .view-heading h1 {
@@ -603,11 +652,13 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .instances-table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -1089,34 +1140,252 @@ body {
 }
 
 /* ==========================================================================
-   Responsive Adaptations
+   Responsive Adaptations (Tablets, Mobiles, Foldables & Small Screens)
    ========================================================================== */
 
+/* Breakpoint 1: Tablets & Medium Screens (max-width: 1024px) */
 @media (max-width: 1024px) {
-  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .services-grid { grid-template-columns: repeat(2, 1fr); }
-  .grid-2-cols { grid-template-columns: 1fr; }
-  .projects-grid { grid-template-columns: 1fr; }
-  .overview-infra-grid { grid-template-columns: 1fr; }
+  .main-content {
+    padding: 20px 24px;
+  }
+
+  .sidebar {
+    width: 230px;
+    padding: 20px 12px;
+  }
+
+  .brand-title {
+    font-size: 0.98rem;
+  }
+
+  .nav-item {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .grid-2-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .overview-infra-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-modal-content {
+    width: 96%;
+    height: 92vh;
+  }
 }
 
+/* Breakpoint 2: Mobile Devices, Phablets & Small Tablets (max-width: 768px) */
 @media (max-width: 768px) {
-  .app-layout { flex-direction: column; }
+  .app-layout {
+    flex-direction: column;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Off-Canvas Mobile Drawer Navigation */
   .sidebar {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--border-subtle);
-    padding: 16px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 290px;
+    max-width: 85vw;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1000;
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-subtle);
+    box-shadow: 10px 0 35px rgba(0, 0, 0, 0.85);
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow-y: auto;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
   }
-  .sidebar-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 4px;
+
+  .sidebar.open {
+    transform: translateX(0);
   }
+
+  .sidebar-backdrop {
+    display: block;
+  }
+
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .menu-toggle-btn {
+    display: flex;
+  }
+
+  .topbar {
+    margin-bottom: 20px;
+    gap: 12px;
+  }
+
+  .view-heading h1 {
+    font-size: 1.25rem;
+    line-height: 1.25;
+  }
+
+  .view-heading p {
+    font-size: 0.78rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .main-content {
     padding: 16px;
     height: auto;
+    min-height: 100vh;
+    padding-top: max(16px, env(safe-area-inset-top));
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
   }
-  .services-grid { grid-template-columns: 1fr; }
-  .kpi-grid { grid-template-columns: 1fr; }
+
+  /* Traffic Panel on Mobile */
+  .panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .traffic-legend {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .chart-canvas-wrapper {
+    height: 175px;
+  }
+
+  .panel-footer {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    padding: 14px 18px;
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .kpi-card {
+    padding: 14px 16px;
+  }
+
+  /* Tables horizontal touch scrolling & visual hint */
+  .instances-table-wrapper, .endpoints-table-wrapper {
+    border-radius: var(--radius-md);
+    box-shadow: inset -6px 0 10px -6px rgba(0, 242, 254, 0.2);
+  }
+
+  /* Workspace Modal in Full Screen Mobile Mode */
+  .workspace-modal-content {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .workspace-header {
+    padding: 12px 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .workspace-title-group {
+    max-width: calc(100% - 120px);
+  }
+
+  .workspace-title {
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .workspace-badge {
+    display: none;
+  }
+
+  .workspace-fallback-banner {
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-start;
+    font-size: 0.72rem;
+  }
+}
+
+/* Breakpoint 3: Compact Phones (max-width: 480px) */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 12px;
+  }
+
+  .topbar-actions {
+    gap: 6px;
+  }
+
+  .action-btn {
+    width: 36px;
+    height: 36px;
+  }
+
+  .kpi-value {
+    font-size: 1.35rem;
+  }
+
+  .panel-body {
+    padding: 14px;
+  }
+
+  .panel-title {
+    font-size: 0.95rem;
+  }
+
+  .proj-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .proj-footer .btn {
+    width: 100%;
+  }
+
+  .modal-content {
+    width: 95%;
+    margin: 8px;
+  }
+
+  .modal-body {
+    padding: 16px;
+  }
 }

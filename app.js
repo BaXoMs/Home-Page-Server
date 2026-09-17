@@ -51,7 +51,41 @@ document.addEventListener('DOMContentLoaded', () => {
   loadConfig();
   renderTrafficChart();
   setupLiveTraffic();
+
+  // Close modals or drawer on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeMobileMenu();
+      closeModal('modal-workspace');
+      closeModal('modal-settings');
+      closeModal('modal-new-project');
+    }
+  });
 });
+
+// Mobile Drawer Menu Controls
+window.toggleMobileMenu = function() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar && backdrop) {
+    const isOpen = sidebar.classList.contains('open');
+    if (isOpen) {
+      closeMobileMenu();
+    } else {
+      sidebar.classList.add('open');
+      backdrop.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+};
+
+window.closeMobileMenu = function() {
+  const sidebar = document.getElementById('app-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (sidebar) sidebar.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('active');
+  document.body.style.overflow = '';
+};
 
 // View Router
 window.switchView = function(viewId) {
@@ -69,6 +103,14 @@ window.switchView = function(viewId) {
   const meta = viewTitles[viewId] || viewTitles.dashboard;
   document.getElementById('view-title').innerText = meta.title;
   document.getElementById('view-subtitle').innerText = meta.subtitle;
+
+  // Auto-close mobile drawer and scroll to top
+  closeMobileMenu();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const mainContent = document.querySelector('.main-content');
+  if (mainContent) {
+    mainContent.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 };
 
 // Generate smooth cubic bezier SVG curve
