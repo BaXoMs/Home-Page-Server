@@ -822,9 +822,9 @@
     </main>
   </div>
 
-  <!-- Smart Service Launcher & Console Portal -->
+  <!-- Smart Service Launcher & Embedded Workspace Portal -->
   <div id="modal-workspace" class="modal-backdrop">
-    <div class="workspace-modal-content">
+    <div class="workspace-modal-content" id="workspace-modal-content">
       <div class="workspace-header">
         <div class="workspace-title-group">
           <span class="workspace-dot"></span>
@@ -833,12 +833,29 @@
             <span id="workspace-node-badge" class="workspace-badge">Nodo</span>
           </div>
         </div>
+
+        <div class="workspace-mode-switch" id="workspace-mode-switch">
+          <button type="button" class="mode-tab-btn active" id="btn-mode-frame" onclick="switchWorkspaceMode('frame')">🖥️ Consola Embebida</button>
+          <button type="button" class="mode-tab-btn" id="btn-mode-launcher" onclick="switchWorkspaceMode('launcher')">🚀 Modo Lanzador</button>
+        </div>
+
         <div class="workspace-controls">
+          <button class="ws-btn" id="ws-btn-reload" onclick="reloadWorkspaceFrame()" title="Recargar">🔄</button>
+          <a id="workspace-header-ext-link" href="#" target="_blank" class="ws-btn" title="Abrir en pestaña nueva">↗️</a>
           <button class="ws-btn close" onclick="closeModal('modal-workspace')" title="Cerrar">&times;</button>
         </div>
       </div>
       
-      <div class="launcher-body">
+      <!-- View 1: Embedded Iframe View (Default on Desktop for compatible services) -->
+      <div id="workspace-frame-container" class="workspace-frame-container">
+        <div id="workspace-frame-alert" class="workspace-frame-alert" style="display: none;">
+          <span>⚠️ <strong>Aviso de Seguridad del Navegador:</strong> Si el servicio bloquea la incrustación directa (<code>frame-ancestors</code> o certificado SSL), usá el botón <strong>↗️ Pestaña Nueva</strong> o cambiá a <strong>🚀 Modo Lanzador</strong>.</span>
+        </div>
+        <iframe id="workspace-iframe" src="" frameborder="0" allowfullscreen></iframe>
+      </div>
+
+      <!-- View 2: Launcher Hub View (Default on Mobile or when switched) -->
+      <div id="workspace-launcher-container" class="launcher-body">
         <div class="launcher-card">
           <div class="launcher-status-banner">
             <span class="status-dot"></span>

@@ -897,28 +897,38 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  width: 92%;
-  max-width: 580px;
-  max-height: 90vh;
+  width: 95%;
+  max-width: 1300px;
+  height: 88vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 10px 50px rgba(0, 0, 0, 0.85);
+  transition: max-width 0.2s ease, height 0.2s ease;
+}
+
+.workspace-modal-content.mode-launcher {
+  max-width: 580px;
+  height: auto;
+  max-height: calc(100dvh - 32px);
 }
 
 .workspace-header {
-  padding: 16px 20px;
+  padding: 12px 18px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .workspace-title-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .workspace-dot {
@@ -927,27 +937,69 @@ body {
   border-radius: 50%;
   background: var(--accent-green);
   box-shadow: 0 0 8px var(--accent-green);
+  flex-shrink: 0;
 }
 
 .workspace-title {
-  font-size: 1.05rem;
+  font-size: 1.02rem;
   font-weight: 700;
   color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .workspace-badge {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-family: 'JetBrains Mono', monospace;
   color: var(--accent-cyan);
   background: rgba(0, 242, 254, 0.08);
   padding: 2px 6px;
   border-radius: 4px;
+  white-space: nowrap;
+}
+
+.workspace-mode-switch {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 3px;
+  border-radius: var(--radius-sm);
+  gap: 4px;
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.mode-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mode-tab-btn:hover {
+  color: #ffffff;
+}
+
+.mode-tab-btn.active {
+  background: var(--accent-cyan);
+  color: #030712;
+  box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+  font-weight: 700;
 }
 
 .workspace-controls {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .ws-btn {
@@ -977,10 +1029,50 @@ body {
   padding: 4px 10px;
 }
 
+/* Frame View */
+.workspace-frame-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #0b0f19;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.workspace-frame-container iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  flex: 1;
+  background: #0b0f19;
+}
+
+.workspace-frame-alert {
+  background: rgba(234, 179, 8, 0.12);
+  border-bottom: 1px solid rgba(234, 179, 8, 0.3);
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  color: #fef08a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.workspace-frame-alert code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
 .launcher-body {
   padding: 22px;
   background: var(--bg-surface);
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .launcher-card {
@@ -1721,13 +1813,17 @@ body {
 
   /* Smart Service Launcher Modal in Mobile Mode */
   .workspace-modal-content {
-    width: 95%;
-    max-width: 480px;
+    width: 100%;
+    max-width: 500px;
     height: auto;
-    max-height: 90vh;
+    max-height: calc(100dvh - 32px);
     border-radius: var(--radius-lg);
     border: 1px solid var(--border-subtle);
     overflow-y: auto;
+  }
+
+  .workspace-mode-switch {
+    display: none;
   }
 
   .launcher-body {

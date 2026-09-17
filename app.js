@@ -204,7 +204,8 @@ const SERVICES_MAP = {
     tailscale: 'https://100.77.123.25:8006',
     lan: 'https://192.168.0.104:8006',
     desc: 'Hipervisor KVM / LXC, telemetría de hardware y consola de máquinas virtuales.',
-    note: '🔒 Proxmox usa HTTPS con certificado autofirmado. Si el navegador advierte del certificado en el celular, tocá "Configuración avanzada" y "Acceder a la IP".'
+    note: '🔒 Proxmox usa HTTPS con certificado autofirmado en puerto 8006. Al correr el dashboard sobre HTTP, los navegadores bloquean el iframe por Mixed Content. Usá el botón de pestaña nueva.',
+    canEmbed: false
   },
   'router': {
     name: 'Router TP-Link Archer C50',
@@ -212,7 +213,8 @@ const SERVICES_MAP = {
     tailscale: null,
     lan: 'http://192.168.0.1',
     desc: 'Panel de administración del router Wi-Fi y configuración de DHCP/LAN.',
-    note: '⚠️ El router físico solo es accesible conectado al Wi-Fi de tu casa (192.168.0.1). Desde datos móviles no responde salvo que configures un Subnet Router en Tailscale.'
+    note: '⚠️ El router físico solo es accesible conectado al Wi-Fi de tu casa (192.168.0.1). Desde datos móviles no responde salvo que configures un Subnet Router en Tailscale.',
+    canEmbed: false
   },
   'portainer': {
     name: 'Portainer CE (NodeR)',
@@ -220,7 +222,8 @@ const SERVICES_MAP = {
     tailscale: 'http://100.120.34.14:9000',
     lan: 'http://192.168.0.200:9000',
     desc: 'Gestor gráfico de contenedores Docker, stacks, volúmenes y redes.',
-    note: '🐳 Puerto web :9000. Portainer bloquea iframes por seguridad (X-Frame-Options), por lo que se abre en pestaña nueva.'
+    note: '🐳 Puerto web :9000. Portainer envía la cabecera CSP frame-ancestors none para evitar clickjacking. Te recomendamos abrirlo en pestaña nueva.',
+    canEmbed: false
   },
   'adguard': {
     name: 'AdGuard Home',
@@ -228,7 +231,8 @@ const SERVICES_MAP = {
     tailscale: 'http://100.120.34.14:8088',
     lan: 'http://192.168.0.200:8088',
     desc: 'Servidor DNS local, filtrado de anuncios y protección de privacidad.',
-    note: '🛡️ Dashboard web en puerto :8088. El puerto DNS activo es :53.'
+    note: '🛡️ Dashboard web en puerto :8088. ¡Totalmente compatible con la consola integrada!',
+    canEmbed: true
   },
   'npm': {
     name: 'Nginx Proxy Manager',
@@ -236,7 +240,8 @@ const SERVICES_MAP = {
     tailscale: 'http://100.120.34.14:81',
     lan: 'http://192.168.0.200:81',
     desc: 'Proxy inverso, enrutamiento de subdominios y certificados SSL.',
-    note: '🌐 Panel de administración en puerto :81.'
+    note: '🌐 Panel de administración en puerto :81. ¡Totalmente compatible con la consola integrada!',
+    canEmbed: true
   },
   'uptime': {
     name: 'Uptime Kuma',
@@ -244,7 +249,8 @@ const SERVICES_MAP = {
     tailscale: 'http://100.120.34.14:3001',
     lan: 'http://192.168.0.200:3001',
     desc: 'Monitoreo de estado de salud, disponibilidad y latencia de red.',
-    note: '📊 Dashboard de monitoreo en tiempo real en puerto :3001.'
+    note: '📊 Dashboard de monitoreo en tiempo real en puerto :3001.',
+    canEmbed: false
   },
   'vaultwarden': {
     name: 'Vaultwarden',
@@ -252,7 +258,8 @@ const SERVICES_MAP = {
     tailscale: 'http://100.120.34.14:8080',
     lan: 'http://192.168.0.200:8080',
     desc: 'Bóveda cifrada y segura de contraseñas personales.',
-    note: '🔐 Puerto :8080.'
+    note: '🔐 Puerto :8080.',
+    canEmbed: true
   },
   'coolify': {
     name: 'Coolify PaaS',
@@ -260,7 +267,8 @@ const SERVICES_MAP = {
     tailscale: 'http://100.120.169.85:8000',
     lan: 'http://192.168.0.112:8000',
     desc: 'PaaS auto-hospedado para despliegue de aplicaciones y bases de datos.',
-    note: '🚀 Puerto :8000.'
+    note: '🚀 Puerto :8000.',
+    canEmbed: true
   },
   'nessus': {
     name: 'Tenable Nessus Essentials',
@@ -268,11 +276,54 @@ const SERVICES_MAP = {
     tailscale: 'https://100.77.123.25:8834',
     lan: 'https://192.168.0.104:8834',
     desc: 'Escáner de vulnerabilidades y auditoría de seguridad perimetral.',
-    note: '🛡️ Puerto :8834 (HTTPS).'
+    note: '🛡️ Puerto :8834 (HTTPS autofirmado).',
+    canEmbed: false
   }
 };
 
-// Smart Service Launcher Hub
+// Workspace State Management
+let currentWorkspaceUrl = '';
+let currentWorkspaceActiveMode = 'launcher';
+
+// Toggle between Embedded Iframe and Launcher Hub
+window.switchWorkspaceMode = function(mode) {
+  currentWorkspaceActiveMode = mode;
+  const contentEl = document.getElementById('workspace-modal-content');
+  const frameContainer = document.getElementById('workspace-frame-container');
+  const launcherContainer = document.getElementById('workspace-launcher-container');
+  const btnFrame = document.getElementById('btn-mode-frame');
+  const btnLauncher = document.getElementById('btn-mode-launcher');
+  const iframe = document.getElementById('workspace-iframe');
+
+  if (mode === 'frame') {
+    if (contentEl) contentEl.classList.remove('mode-launcher');
+    if (frameContainer) frameContainer.style.display = 'flex';
+    if (launcherContainer) launcherContainer.style.display = 'none';
+    if (btnFrame) btnFrame.classList.add('active');
+    if (btnLauncher) btnLauncher.classList.remove('active');
+
+    // Load URL in iframe if different or not loaded
+    if (iframe && currentWorkspaceUrl && iframe.src !== currentWorkspaceUrl) {
+      iframe.src = currentWorkspaceUrl;
+    }
+  } else {
+    if (contentEl) contentEl.classList.add('mode-launcher');
+    if (frameContainer) frameContainer.style.display = 'none';
+    if (launcherContainer) launcherContainer.style.display = 'block';
+    if (btnFrame) btnFrame.classList.remove('active');
+    if (btnLauncher) btnLauncher.classList.add('active');
+  }
+};
+
+// Reload iframe content
+window.reloadWorkspaceFrame = function() {
+  const iframe = document.getElementById('workspace-iframe');
+  if (iframe && iframe.src) {
+    iframe.src = iframe.src;
+  }
+};
+
+// Smart Service Launcher & Embedded Console Hub
 window.openWorkspace = function(urlOrKey, title) {
   let svc = SERVICES_MAP[urlOrKey];
 
@@ -295,18 +346,33 @@ window.openWorkspace = function(urlOrKey, title) {
       tailscale: (urlOrKey && urlOrKey.startsWith('http')) ? urlOrKey : null,
       lan: (urlOrKey && urlOrKey.startsWith('http')) ? urlOrKey : null,
       desc: 'Acceso directo a la interfaz del servicio.',
-      note: 'Abrí el servicio en pestaña nueva para acceder directamente sin restricciones del navegador.'
+      note: 'Abrí el servicio para acceder directamente.',
+      canEmbed: true
     };
   }
 
   const isTailscale = window.location.hostname.startsWith('100.');
   const activeUrl = (isTailscale && svc.tailscale) ? svc.tailscale : (svc.lan || svc.tailscale);
+  currentWorkspaceUrl = activeUrl || '';
 
-  document.getElementById('workspace-title').innerText = svc.name;
-  document.getElementById('workspace-node-badge').innerText = svc.node;
-  document.getElementById('launcher-service-name').innerText = svc.name;
-  document.getElementById('launcher-service-desc').innerText = svc.desc;
-  document.getElementById('launcher-security-note-text').innerText = svc.note;
+  // Update UI metadata
+  const titleEl = document.getElementById('workspace-title');
+  if (titleEl) titleEl.innerText = svc.name;
+  const nodeEl = document.getElementById('workspace-node-badge');
+  if (nodeEl) nodeEl.innerText = svc.node;
+
+  const svcNameEl = document.getElementById('launcher-service-name');
+  if (svcNameEl) svcNameEl.innerText = svc.name;
+  const svcDescEl = document.getElementById('launcher-service-desc');
+  if (svcDescEl) svcDescEl.innerText = svc.desc;
+  const svcNoteEl = document.getElementById('launcher-security-note-text');
+  if (svcNoteEl) svcNoteEl.innerText = svc.note;
+
+  // External link buttons (both in header and launcher card)
+  const headerExtBtn = document.getElementById('workspace-header-ext-link');
+  if (headerExtBtn) {
+    headerExtBtn.href = activeUrl || '#';
+  }
 
   const primaryBtn = document.getElementById('workspace-external-link');
   if (primaryBtn) {
@@ -352,6 +418,28 @@ window.openWorkspace = function(urlOrKey, title) {
     lanCard.style.display = 'none';
   }
 
+  // Frame alert bar
+  const frameAlert = document.getElementById('workspace-frame-alert');
+  if (frameAlert) {
+    frameAlert.style.display = (svc.canEmbed === false) ? 'flex' : 'none';
+  }
+
+  // Decide initial mode:
+  // Mobile (< 768px): always launcher mode
+  // Desktop (>= 768px):
+  //   - If canEmbed === true: 'frame' mode (loads inside same tab / window)
+  //   - If canEmbed === false: 'launcher' mode by default, but toggle is right there
+  const isMobile = window.innerWidth < 768;
+  if (isMobile) {
+    switchWorkspaceMode('launcher');
+  } else {
+    if (svc.canEmbed !== false && activeUrl) {
+      switchWorkspaceMode('frame');
+    } else {
+      switchWorkspaceMode('launcher');
+    }
+  }
+
   openModal('modal-workspace');
 };
 
@@ -366,9 +454,10 @@ window.closeModal = function(id) {
   if (m) {
     m.classList.remove('active');
     if (id === 'modal-workspace') {
-      // Clear iframe on close to stop resource usage
+      // Clear iframe on close to stop resource usage and sound/network
       const iframe = document.getElementById('workspace-iframe');
       if (iframe) iframe.src = '';
+      currentWorkspaceUrl = '';
     }
   }
 };
