@@ -822,25 +822,60 @@
     </main>
   </div>
 
-  <!-- Integrated Workspace Viewer Modal (In-App Embedding) -->
+  <!-- Smart Service Launcher & Console Portal -->
   <div id="modal-workspace" class="modal-backdrop">
     <div class="workspace-modal-content">
       <div class="workspace-header">
         <div class="workspace-title-group">
           <span class="workspace-dot"></span>
-          <h3 id="workspace-title" class="workspace-title">Consola Integrada</h3>
-          <span id="workspace-url-badge" class="workspace-badge"></span>
+          <div>
+            <h3 id="workspace-title" class="workspace-title">Consola del Servicio</h3>
+            <span id="workspace-node-badge" class="workspace-badge">Nodo</span>
+          </div>
         </div>
         <div class="workspace-controls">
-          <button class="ws-btn" onclick="reloadWorkspaceFrame()" title="Recargar">🔄</button>
-          <a id="workspace-external-link" href="#" target="_blank" class="ws-btn" title="Abrir en pestaña nueva">↗️</a>
           <button class="ws-btn close" onclick="closeModal('modal-workspace')" title="Cerrar">&times;</button>
         </div>
       </div>
-      <div class="workspace-frame-container">
-        <iframe id="workspace-iframe" src="" frameborder="0" allowfullscreen></iframe>
-        <div id="workspace-fallback-banner" class="workspace-fallback-banner">
-          <p>⚠️ <strong>Nota de Seguridad del Navegador:</strong> Si el servicio bloquea la incrustación directa debido a cabeceras de seguridad (<code>X-Frame-Options</code>), usá el botón <strong>↗️ Abrir en pestaña nueva</strong>.</p>
+      
+      <div class="launcher-body">
+        <div class="launcher-card">
+          <div class="launcher-status-banner">
+            <span class="status-dot"></span>
+            <span id="launcher-network-indicator">Conexión Detectada: Tailscale Mesh</span>
+          </div>
+          
+          <h4 id="launcher-service-name" class="launcher-name">Servicio</h4>
+          <p id="launcher-service-desc" class="launcher-desc">Descripción del servicio.</p>
+
+          <div class="launcher-primary-action">
+            <a id="workspace-external-link" href="#" target="_blank" class="btn btn-primary btn-launch">
+              🚀 Abrir en Pestaña Nueva
+            </a>
+          </div>
+
+          <!-- Dual Connection Endpoints -->
+          <div class="launcher-endpoints">
+            <div class="endpoint-card" id="endpoint-tailscale-card">
+              <div class="endpoint-meta">
+                <span class="endpoint-label">Acceso Tailscale (Datos Móviles / Remoto)</span>
+                <span id="launcher-tailscale-url" class="endpoint-url">-</span>
+              </div>
+              <a id="launcher-tailscale-btn" href="#" target="_blank" class="btn btn-sm btn-primary">Abrir</a>
+            </div>
+
+            <div class="endpoint-card" id="endpoint-lan-card">
+              <div class="endpoint-meta">
+                <span class="endpoint-label">Acceso Red Local (Wi-Fi de Casa)</span>
+                <span id="launcher-lan-url" class="endpoint-url">-</span>
+              </div>
+              <a id="launcher-lan-btn" href="#" target="_blank" class="btn btn-sm btn-secondary">Abrir</a>
+            </div>
+          </div>
+
+          <div class="launcher-security-note" id="launcher-security-note">
+            <p id="launcher-security-note-text">ℹ️ <strong>Nota de Conectividad:</strong> Las consolas de seguridad bloquean la incrustación en iframes mediante cabeceras <code>X-Frame-Options</code>. Al abrirlas en pestaña nueva accedes directamente sin restricciones.</p>
+          </div>
         </div>
       </div>
     </div>

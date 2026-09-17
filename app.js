@@ -196,23 +196,163 @@ function setupLiveTraffic() {
   }, 4000);
 }
 
-// Integrated Workspace Modal (In-App Embedding)
-window.openWorkspace = function(url, title) {
-  document.getElementById('workspace-title').innerText = title;
-  document.getElementById('workspace-url-badge').innerText = url;
-  document.getElementById('workspace-external-link').href = url;
-  
-  const iframe = document.getElementById('workspace-iframe');
-  iframe.src = url;
-
-  openModal('modal-workspace');
+// Smart Service Catalog & Dual-Endpoint Resolver
+const SERVICES_MAP = {
+  'proxmox': {
+    name: 'Consola Proxmox VE (jj)',
+    node: 'Servidor jj (Hipervisor Principal)',
+    tailscale: 'https://100.77.123.25:8006',
+    lan: 'https://192.168.0.104:8006',
+    desc: 'Hipervisor KVM / LXC, telemetría de hardware y consola de máquinas virtuales.',
+    note: '🔒 Proxmox usa HTTPS con certificado autofirmado. Si el navegador advierte del certificado en el celular, tocá "Configuración avanzada" y "Acceder a la IP".'
+  },
+  'router': {
+    name: 'Router TP-Link Archer C50',
+    node: 'Gateway de Red Físico',
+    tailscale: null,
+    lan: 'http://192.168.0.1',
+    desc: 'Panel de administración del router Wi-Fi y configuración de DHCP/LAN.',
+    note: '⚠️ El router físico solo es accesible conectado al Wi-Fi de tu casa (192.168.0.1). Desde datos móviles no responde salvo que configures un Subnet Router en Tailscale.'
+  },
+  'portainer': {
+    name: 'Portainer CE (NodeR)',
+    node: 'Raspberry Pi 4 (NodeR)',
+    tailscale: 'http://100.120.34.14:9000',
+    lan: 'http://192.168.0.200:9000',
+    desc: 'Gestor gráfico de contenedores Docker, stacks, volúmenes y redes.',
+    note: '🐳 Puerto web :9000. Portainer bloquea iframes por seguridad (X-Frame-Options), por lo que se abre en pestaña nueva.'
+  },
+  'adguard': {
+    name: 'AdGuard Home',
+    node: 'Raspberry Pi 4 (NodeR)',
+    tailscale: 'http://100.120.34.14:8088',
+    lan: 'http://192.168.0.200:8088',
+    desc: 'Servidor DNS local, filtrado de anuncios y protección de privacidad.',
+    note: '🛡️ Dashboard web en puerto :8088. El puerto DNS activo es :53.'
+  },
+  'npm': {
+    name: 'Nginx Proxy Manager',
+    node: 'Raspberry Pi 4 (NodeR)',
+    tailscale: 'http://100.120.34.14:81',
+    lan: 'http://192.168.0.200:81',
+    desc: 'Proxy inverso, enrutamiento de subdominios y certificados SSL.',
+    note: '🌐 Panel de administración en puerto :81.'
+  },
+  'uptime': {
+    name: 'Uptime Kuma',
+    node: 'Raspberry Pi 4 (NodeR)',
+    tailscale: 'http://100.120.34.14:3001',
+    lan: 'http://192.168.0.200:3001',
+    desc: 'Monitoreo de estado de salud, disponibilidad y latencia de red.',
+    note: '📊 Dashboard de monitoreo en tiempo real en puerto :3001.'
+  },
+  'vaultwarden': {
+    name: 'Vaultwarden',
+    node: 'Raspberry Pi 4 (NodeR)',
+    tailscale: 'http://100.120.34.14:8080',
+    lan: 'http://192.168.0.200:8080',
+    desc: 'Bóveda cifrada y segura de contraseñas personales.',
+    note: '🔐 Puerto :8080.'
+  },
+  'coolify': {
+    name: 'Coolify PaaS',
+    node: 'Proxmox VE (LXC 200)',
+    tailscale: 'http://100.120.169.85:8000',
+    lan: 'http://192.168.0.112:8000',
+    desc: 'PaaS auto-hospedado para despliegue de aplicaciones y bases de datos.',
+    note: '🚀 Puerto :8000.'
+  },
+  'nessus': {
+    name: 'Tenable Nessus Essentials',
+    node: 'Proxmox VE (VM 107)',
+    tailscale: 'https://100.77.123.25:8834',
+    lan: 'https://192.168.0.104:8834',
+    desc: 'Escáner de vulnerabilidades y auditoría de seguridad perimetral.',
+    note: '🛡️ Puerto :8834 (HTTPS).'
+  }
 };
 
-window.reloadWorkspaceFrame = function() {
-  const iframe = document.getElementById('workspace-iframe');
-  if (iframe) {
-    iframe.src = iframe.src;
+// Smart Service Launcher Hub
+window.openWorkspace = function(urlOrKey, title) {
+  let svc = SERVICES_MAP[urlOrKey];
+
+  if (!svc) {
+    const searchTarget = (urlOrKey + ' ' + (title || '')).toLowerCase();
+    const key = Object.keys(SERVICES_MAP).find(k => {
+      const item = SERVICES_MAP[k];
+      return (item.tailscale && searchTarget.includes(item.tailscale.toLowerCase())) ||
+             (item.lan && searchTarget.includes(item.lan.toLowerCase())) ||
+             (searchTarget.includes(k)) ||
+             (searchTarget.includes(item.name.toLowerCase()));
+    });
+    if (key) svc = SERVICES_MAP[key];
   }
+
+  if (!svc) {
+    svc = {
+      name: title || 'Consola de Servicio',
+      node: 'Servidor Local',
+      tailscale: (urlOrKey && urlOrKey.startsWith('http')) ? urlOrKey : null,
+      lan: (urlOrKey && urlOrKey.startsWith('http')) ? urlOrKey : null,
+      desc: 'Acceso directo a la interfaz del servicio.',
+      note: 'Abrí el servicio en pestaña nueva para acceder directamente sin restricciones del navegador.'
+    };
+  }
+
+  const isTailscale = window.location.hostname.startsWith('100.');
+  const activeUrl = (isTailscale && svc.tailscale) ? svc.tailscale : (svc.lan || svc.tailscale);
+
+  document.getElementById('workspace-title').innerText = svc.name;
+  document.getElementById('workspace-node-badge').innerText = svc.node;
+  document.getElementById('launcher-service-name').innerText = svc.name;
+  document.getElementById('launcher-service-desc').innerText = svc.desc;
+  document.getElementById('launcher-security-note-text').innerText = svc.note;
+
+  const primaryBtn = document.getElementById('workspace-external-link');
+  if (primaryBtn) {
+    primaryBtn.href = activeUrl || '#';
+    primaryBtn.onclick = function(e) {
+      if (!activeUrl) {
+        e.preventDefault();
+        alert('Este servicio solo está disponible cuando estés conectado al Wi-Fi de tu casa.');
+      }
+    };
+  }
+
+  const netIndicator = document.getElementById('launcher-network-indicator');
+  if (netIndicator) {
+    netIndicator.innerText = isTailscale 
+      ? 'Conexión detectada: Tailscale Mesh (Datos Móviles / Remoto)' 
+      : 'Conexión detectada: Red Local Wi-Fi (LAN)';
+  }
+
+  const tsCard = document.getElementById('endpoint-tailscale-card');
+  const tsUrl = document.getElementById('launcher-tailscale-url');
+  const tsBtn = document.getElementById('launcher-tailscale-btn');
+  if (svc.tailscale) {
+    tsCard.style.display = 'flex';
+    tsUrl.innerText = svc.tailscale;
+    tsBtn.href = svc.tailscale;
+    tsBtn.classList.toggle('btn-primary', isTailscale);
+    tsBtn.classList.toggle('btn-secondary', !isTailscale);
+  } else {
+    tsCard.style.display = 'none';
+  }
+
+  const lanCard = document.getElementById('endpoint-lan-card');
+  const lanUrl = document.getElementById('launcher-lan-url');
+  const lanBtn = document.getElementById('launcher-lan-btn');
+  if (svc.lan) {
+    lanCard.style.display = 'flex';
+    lanUrl.innerText = svc.lan;
+    lanBtn.href = svc.lan;
+    lanBtn.classList.toggle('btn-primary', !isTailscale);
+    lanBtn.classList.toggle('btn-secondary', isTailscale);
+  } else {
+    lanCard.style.display = 'none';
+  }
+
+  openModal('modal-workspace');
 };
 
 // Modal controls

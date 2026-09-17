@@ -873,16 +873,16 @@ body {
 }
 
 /* ==========================================================================
-   Integrated Workspace Modal (Embedded iFrame)
+   Smart Service Launcher Hub & Console Portal
    ========================================================================== */
 
 .workspace-modal-content {
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  width: 95%;
-  max-width: 1280px;
-  height: 90vh;
+  width: 92%;
+  max-width: 580px;
+  max-height: 90vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -890,7 +890,7 @@ body {
 }
 
 .workspace-header {
-  padding: 14px 20px;
+  padding: 16px 20px;
   background: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
@@ -901,7 +901,7 @@ body {
 .workspace-title-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .workspace-dot {
@@ -913,15 +913,18 @@ body {
 }
 
 .workspace-title {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #ffffff;
 }
 
 .workspace-badge {
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-family: 'JetBrains Mono', monospace;
-  color: var(--text-muted);
+  color: var(--accent-cyan);
+  background: rgba(0, 242, 254, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .workspace-controls {
@@ -951,35 +954,118 @@ body {
 }
 
 .ws-btn.close {
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   color: var(--text-muted);
   line-height: 1;
+  padding: 4px 10px;
 }
 
-.workspace-frame-container {
-  flex: 1;
+.launcher-body {
+  padding: 22px;
+  background: var(--bg-surface);
+  overflow-y: auto;
+}
+
+.launcher-card {
   display: flex;
   flex-direction: column;
-  position: relative;
-  background: #000000;
+  gap: 14px;
 }
 
-#workspace-iframe {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  border: none;
-}
-
-.workspace-fallback-banner {
-  padding: 10px 16px;
-  background: rgba(15, 23, 42, 0.95);
-  border-top: 1px solid var(--border-subtle);
-  font-size: 0.78rem;
-  color: var(--text-muted);
+.launcher-status-banner {
   display: flex;
   align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 242, 254, 0.08);
+  border: 1px solid rgba(0, 242, 254, 0.2);
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+}
+
+.launcher-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.launcher-desc {
+  font-size: 0.84rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.launcher-primary-action {
+  width: 100%;
+}
+
+.btn-launch {
+  width: 100%;
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  box-shadow: 0 0 20px var(--accent-cyan-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.launcher-endpoints {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.endpoint-card {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  gap: 12px;
+}
+
+.endpoint-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.endpoint-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.endpoint-url {
+  font-size: 0.82rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.launcher-security-note {
+  background: rgba(14, 22, 38, 0.8);
+  border-left: 3px solid #eab308;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  color: #e2e8f0;
+  line-height: 1.45;
 }
 
 /* ==========================================================================
@@ -1462,21 +1548,77 @@ body {
   }
 
   .topbar {
-    margin-bottom: 20px;
-    gap: 12px;
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  .topbar-left {
+    flex: 1;
+    min-width: 0;
+    gap: 10px;
   }
 
   .view-heading h1 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .view-heading p {
-    font-size: 0.78rem;
+    font-size: 0.74rem;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* Fix Server Hero Collision on Mobile (Proxmox & Raspberry Pi) */
+  .server-hero {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 18px 16px;
+  }
+
+  .hero-left {
+    width: 100%;
+  }
+
+  .server-name {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
+  .server-specs {
+    font-size: 0.8rem;
+    line-height: 1.4;
+  }
+
+  .hero-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .stat-pill {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+  }
+
+  .hero-right .btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.86rem;
+    padding: 10px 16px;
+    justify-content: center;
+    border-radius: var(--radius-sm);
   }
 
   .main-content {
@@ -1529,41 +1671,38 @@ body {
     box-shadow: inset -6px 0 10px -6px rgba(0, 242, 254, 0.2);
   }
 
-  /* Workspace Modal in Full Screen Mobile Mode */
+  /* Smart Service Launcher Modal in Mobile Mode */
   .workspace-modal-content {
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    border-radius: 0;
-    border: none;
+    width: 95%;
+    max-width: 480px;
+    height: auto;
+    max-height: 90vh;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    overflow-y: auto;
+  }
+
+  .launcher-body {
+    padding: 16px;
   }
 
   .workspace-header {
     padding: 12px 16px;
-    flex-wrap: wrap;
-    gap: 8px;
   }
 
   .workspace-title-group {
-    max-width: calc(100% - 120px);
+    max-width: calc(100% - 60px);
   }
 
   .workspace-title {
-    font-size: 0.88rem;
+    font-size: 0.95rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .workspace-badge {
-    display: none;
-  }
-
-  .workspace-fallback-banner {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
-    font-size: 0.72rem;
+    font-size: 0.68rem;
   }
 }
 
