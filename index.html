@@ -222,6 +222,117 @@
             </div>
           </div>
         </div>
+
+        <!-- Detailed Live VMs & Infrastructure Status Widget on Overview Screen -->
+        <div class="overview-infra-grid">
+          <!-- Proxmox Running VMs / LXCs Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title-group">
+                <h3 class="panel-title">Instancias Proxmox VE (jj) en Vivo</h3>
+                <span class="panel-tag">2 Activas · 7 En Espera (On-Demand)</span>
+              </div>
+              <button onclick="switchView('proxmox')" class="btn btn-sm">Ver Todas</button>
+            </div>
+            <div class="panel-body">
+              <div class="vm-live-list">
+                <!-- LXC 200 Coolify -->
+                <div class="vm-live-item active">
+                  <div class="vm-live-badge green">LXC 200</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">coolify <span class="status-pill green">RUNNING</span></div>
+                    <div class="vm-live-meta">Coolify PaaS, n8n, PostgreSQL · 2 Cores · 4096 MB</div>
+                  </div>
+                  <button onclick="openWorkspace('http://100.120.169.85:8000', 'Coolify Dashboard')" class="btn btn-sm">Consola</button>
+                </div>
+
+                <!-- VM 102 OPNsense -->
+                <div class="vm-live-item active">
+                  <div class="vm-live-badge green">VM 102</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">opnsense-lab <span class="status-pill green">RUNNING</span></div>
+                    <div class="vm-live-meta">Router & Firewall (vmbr0-3) · 1 Core · 512 MB</div>
+                  </div>
+                  <span class="status-badge green">Routing</span>
+                </div>
+
+                <!-- VM 106 Ollama Qwen / macOS -->
+                <div class="vm-live-item standby">
+                  <div class="vm-live-badge purple">VM 106</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">Ollama-Qwen & macOS <span class="status-pill purple">GTX 1650S GPU</span></div>
+                    <div class="vm-live-meta">NVIDIA VFIO Passthrough · 4 Cores · 8192 MB</div>
+                  </div>
+                  <span class="status-badge gray">Standby</span>
+                </div>
+
+                <!-- VM 107 Nessus Scanner -->
+                <div class="vm-live-item standby">
+                  <div class="vm-live-badge blue">VM 107</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">Nessus-Scanner <span class="status-pill blue">OPTIMIZADA</span></div>
+                    <div class="vm-live-meta">Escáner de Red · 2 Cores · 4096 MB (Balloon 2G)</div>
+                  </div>
+                  <span class="status-badge gray">Standby</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Raspberry Pi Core Docker Services Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title-group">
+                <h3 class="panel-title">Servicios Core en Raspberry Pi (NodeR)</h3>
+                <span class="panel-tag">6 Contenedores Docker Activos 24/7</span>
+              </div>
+              <button onclick="switchView('raspberry')" class="btn btn-sm">Gestionar</button>
+            </div>
+            <div class="panel-body">
+              <div class="vm-live-list">
+                <!-- AdGuard Home -->
+                <div class="vm-live-item active">
+                  <div class="vm-live-badge cyan">DNS</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">AdGuard Home <span class="status-pill green">HEALTHY</span></div>
+                    <div class="vm-live-meta">Filtrado DNS y protección de red · Puerto :8088</div>
+                  </div>
+                  <button onclick="openWorkspace('http://100.120.34.14:8088', 'AdGuard Home')" class="btn btn-sm">Abrir</button>
+                </div>
+
+                <!-- Nginx Proxy Manager -->
+                <div class="vm-live-item active">
+                  <div class="vm-live-badge cyan">PROXY</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">Nginx Proxy Manager <span class="status-pill green">RUNNING</span></div>
+                    <div class="vm-live-meta">Certificados SSL Let's Encrypt y ruteo web · Puerto :81</div>
+                  </div>
+                  <button onclick="openWorkspace('http://100.120.34.14:81', 'Nginx Proxy Manager')" class="btn btn-sm">Abrir</button>
+                </div>
+
+                <!-- Portainer CE -->
+                <div class="vm-live-item active">
+                  <div class="vm-live-badge cyan">DOCKER</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">Portainer CE <span class="status-pill green">RUNNING</span></div>
+                    <div class="vm-live-meta">Orquestador visual de contenedores · Puerto :9000</div>
+                  </div>
+                  <button onclick="openWorkspace('http://100.120.34.14:9000', 'Portainer CE')" class="btn btn-sm">Abrir</button>
+                </div>
+
+                <!-- Vaultwarden -->
+                <div class="vm-live-item active">
+                  <div class="vm-live-badge cyan">AUTH</div>
+                  <div class="vm-live-info">
+                    <div class="vm-live-name">Vaultwarden <span class="status-pill green">HEALTHY</span></div>
+                    <div class="vm-live-meta">Bóveda cifrada de credenciales · Puerto :8080</div>
+                  </div>
+                  <button onclick="openWorkspace('http://100.120.34.14:8080', 'Vaultwarden')" class="btn btn-sm">Abrir</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- VIEW 2: PROXMOX VE (jj) -->
