@@ -51,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadConfig();
   renderTrafficChart();
   setupLiveTraffic();
+  getPowerToken();
 
   // Close modals or drawer on Escape key
   document.addEventListener('keydown', (e) => {
@@ -59,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
       closeModal('modal-workspace');
       closeModal('modal-settings');
       closeModal('modal-new-project');
+      closeModal('modal-power-proxmox');
+      closeModal('modal-power-rpi');
     }
   });
 });
@@ -632,12 +635,74 @@ function auditProxmoxWorkloads() {
   }
 }
 
-window.executeProxmoxShutdown = function() {
-  const confirmBtn = document.getElementById('btn-proxmox-shutdown-confirm');
-  if (confirmBtn) confirmBtn.disabled = true;
+// ==========================================================================
+// Power Bridge Token Management & Real Hardware Shutdown
+// ==========================================================================
 
-  alert('Enviando orden de apagado ordenado a Proxmox VE (jj) vía API...\nEl hipervisor cerrará las máquinas virtuales y procederá al apagado.');
-  closeModal('modal-power-proxmox');
+let cachedPowerToken = '';
+
+async function getPowerToken() {
+  if (cachedPowerToken) return cachedPowerToken;
+  try {
+    const res = await fetch('/api/power/token');
+    if (res.ok) {
+      const data = await res.json();
+      if (data.token) {
+        cachedPowerToken = data.token;
+        return cachedPowerToken;
+      }
+    }
+  } catch (e) {
+    console.warn('[PowerBridge] Could not fetch power token:', e);
+  }
+  return '';
+}
+
+window.executeProxmoxShutdown = async function() {
+  const confirmBtn = document.getElementById('btn-proxmox-shutdown-confirm');
+  const verdict = document.getElementById('proxmox-audit-verdict');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = '⏳ Enviando orden de apagado...';
+  }
+
+  try {
+    const token = await getPowerToken();
+    const res = await fetch('/api/power/proxmox', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      if (verdict) {
+        verdict.className = 'audit-verdict ready';
+        verdict.innerHTML = `
+          🔌 <strong>ORDEN ENVIADA EXITOSAMENTE:</strong><br>
+          ${data.message}<br><br>
+          <em>El hipervisor Proxmox VE (jj) se desconectará físicamente en breves instantes.</em>
+        `;
+      }
+      if (confirmBtn) {
+        confirmBtn.innerText = '✅ Proxmox Apagándose';
+      }
+      setTimeout(() => {
+        closeModal('modal-power-proxmox');
+      }, 4000);
+    } else {
+      throw new Error(data.error || 'Error al comunicarse con el daemon de energía');
+    }
+  } catch (err) {
+    alert('Error al apagar Proxmox: ' + err.message);
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerText = '🛑 Reintentar Apagado';
+    }
+  }
 };
 
 // Raspberry Pi Edge Node Power Off
@@ -665,36 +730,66 @@ window.onRpiConfirmInput = function(value) {
   }
 };
 
-window.executeRpiShutdown = function() {
+window.executeRpiShutdown = async function() {
   const modalBody = document.querySelector('#modal-power-rpi .modal-body');
   const modalFooter = document.querySelector('#modal-power-rpi .modal-footer');
-  if (modalFooter) modalFooter.style.display = 'none';
-
-  if (modalBody) {
-    modalBody.innerHTML = `
-      <div style="text-align: center; padding: 20px 10px;">
-        <div style="font-size: 2.5rem; margin-bottom: 12px;">🔌</div>
-        <h3 style="color: #ffffff; margin-bottom: 10px;">Apagando Raspberry Pi (NodeR)...</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5;">
-          El sistema operativo está deteniendo los contenedores Docker y ejecutando <code>poweroff</code>.<br>
-          <strong>Esta ventana de Home-Page-Server perderá conexión en unos instantes.</strong>
-        </p>
-        <div style="margin-top: 18px; color: #ef4444; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
-          [CONEXIÓN CERRADA]
-        </div>
-      </div>
-    `;
+  const confirmBtn = document.getElementById('btn-rpi-shutdown-confirm');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = '⏳ Apagando...';
   }
 
-  setTimeout(() => {
-    document.body.innerHTML = `
-      <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #060911; color: #ffffff; font-family: sans-serif; text-align: center; padding: 20px;">
-        <div style="font-size: 3.5rem; margin-bottom: 16px;">⚡</div>
-        <h1 style="font-size: 1.5rem; margin-bottom: 8px;">Servidor Desconectado</h1>
-        <p style="color: #8493ad; max-width: 440px; line-height: 1.5; font-size: 0.9rem;">
-          La Raspberry Pi se ha apagado correctamente. Para volver a visualizar la Home Page y recuperar los servicios de red, reconectá la alimentación física de la Pi.
-        </p>
-      </div>
-    `;
-  }, 4000);
+  try {
+    const token = await getPowerToken();
+    const res = await fetch('/api/power/rpi', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ challenge: 'APAGAR' })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Error de apagado');
+    }
+
+    if (modalFooter) modalFooter.style.display = 'none';
+
+    if (modalBody) {
+      modalBody.innerHTML = `
+        <div style="text-align: center; padding: 20px 10px;">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">🔌</div>
+          <h3 style="color: #ffffff; margin-bottom: 10px;">Apagando Raspberry Pi (NodeR)...</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5;">
+            El sistema operativo está deteniendo los contenedores Docker y ejecutando <code>poweroff</code>.<br>
+            <strong>Esta ventana de Home-Page-Server perderá conexión en unos instantes.</strong>
+          </p>
+          <div style="margin-top: 18px; color: #ef4444; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+            [APAGADO EN PROCESO]
+          </div>
+        </div>
+      `;
+    }
+
+    setTimeout(() => {
+      document.body.innerHTML = `
+        <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #060911; color: #ffffff; font-family: sans-serif; text-align: center; padding: 20px;">
+          <div style="font-size: 3.5rem; margin-bottom: 16px;">⚡</div>
+          <h1 style="font-size: 1.5rem; margin-bottom: 8px;">Servidor Desconectado</h1>
+          <p style="color: #8493ad; max-width: 440px; line-height: 1.5; font-size: 0.9rem;">
+            La Raspberry Pi se ha apagado correctamente. Para volver a visualizar la Home Page y recuperar los servicios de red, reconectá la alimentación física de la Pi.
+          </p>
+        </div>
+      `;
+    }, 4000);
+
+  } catch (err) {
+    alert('Error al apagar Raspberry Pi: ' + err.message);
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerText = '⚠️ Reintentar Apagado';
+    }
+  }
 };
