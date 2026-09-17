@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderTrafficChart();
   setupLiveTraffic();
   getPowerToken();
+  pollServerHealth();
+  setInterval(pollServerHealth, 6000);
 
   // Close modals or drawer on Escape key
   document.addEventListener('keydown', (e) => {
@@ -465,10 +467,86 @@ window.closeModal = function(id) {
   }
 };
 
+// Poll real-time hardware & server health via Power Bridge
+async function pollServerHealth() {
+  try {
+    const res = await fetch('/api/power/status');
+    if (!res.ok) return;
+    const data = await res.json();
+    const isPveUp = !!data.proxmox_reachable;
+
+    // Overview Screen KPI
+    const pveBadge = document.getElementById('pve-status-badge');
+    const pveVms = document.getElementById('pve-active-vms');
+    const pveMeta = document.getElementById('pve-active-meta');
+    const pvePanelTag = document.getElementById('pve-panel-tag');
+    const pveLiveList = document.getElementById('pve-live-list');
+
+    if (pveBadge) {
+      pveBadge.className = isPveUp ? 'status-badge green' : 'status-badge red';
+      pveBadge.innerText = isPveUp ? 'Online' : 'Offline';
+    }
+    if (pveVms) {
+      pveVms.innerText = isPveUp ? '2 Activas' : 'Apagado';
+      pveVms.style.color = isPveUp ? '#ffffff' : '#94a3b8';
+    }
+    if (pveMeta) {
+      pveMeta.innerText = isPveUp 
+        ? 'LXC 200 (Coolify) · VM 102 (OPNsense)' 
+        : 'Servidor Proxmox desconectado (0 Activas)';
+    }
+    if (pvePanelTag) {
+      pvePanelTag.innerText = isPveUp
+        ? '2 Activas · 7 En Espera (On-Demand)'
+        : '0 Activas · Hipervisor Apagado';
+      pvePanelTag.style.color = isPveUp ? 'var(--accent-cyan)' : '#ef4444';
+    }
+    if (pveLiveList) {
+      pveLiveList.style.opacity = isPveUp ? '1' : '0.45';
+    }
+
+    // Proxmox Screen Hero
+    const pveHeroBadge = document.getElementById('pve-hero-badge');
+    const pveRamValue = document.getElementById('pve-ram-value');
+    const pvePowerBtn = document.getElementById('pve-power-btn');
+    const pveConsoleBtn = document.getElementById('pve-console-btn');
+
+    if (pveHeroBadge) {
+      pveHeroBadge.innerText = isPveUp ? 'Hipervisor Principal · ONLINE' : 'Hipervisor Principal · OFFLINE';
+      pveHeroBadge.style.color = isPveUp ? 'var(--accent-cyan)' : '#ef4444';
+    }
+    if (pveRamValue) {
+      pveRamValue.innerText = isPveUp ? '12.0 GB / 16 GB' : '0.0 GB (Apagado)';
+      pveRamValue.className = isPveUp ? 'stat-value text-green' : 'stat-value';
+      if (!isPveUp) pveRamValue.style.color = '#94a3b8';
+    }
+    if (pvePowerBtn) {
+      if (!isPveUp) {
+        pvePowerBtn.innerText = '⚡ Servidor Apagado';
+        pvePowerBtn.disabled = true;
+        pvePowerBtn.classList.remove('btn-danger-outline');
+        pvePowerBtn.classList.add('btn-secondary');
+      } else {
+        pvePowerBtn.innerText = '🛑 Apagado Seguro';
+        pvePowerBtn.disabled = false;
+        pvePowerBtn.classList.add('btn-danger-outline');
+        pvePowerBtn.classList.remove('btn-secondary');
+      }
+    }
+    if (pveConsoleBtn) {
+      pveConsoleBtn.disabled = !isPveUp;
+      pveConsoleBtn.style.opacity = isPveUp ? '1' : '0.5';
+    }
+  } catch (e) {
+    console.warn('[PowerStatus] Telemetry poll failed:', e);
+  }
+}
+
 window.refreshData = function() {
   const btn = document.getElementById('btn-refresh');
   btn.style.transform = 'rotate(180deg)';
   setTimeout(() => { btn.style.transform = 'none'; }, 400);
+  pollServerHealth();
 };
 
 function loadConfig() {

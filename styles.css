@@ -398,6 +398,12 @@ body {
   border: 1px solid rgba(100, 116, 139, 0.25);
 }
 
+.status-badge.red {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
 .kpi-value {
   font-size: 1.45rem;
   font-weight: 800;

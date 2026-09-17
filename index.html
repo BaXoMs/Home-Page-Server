@@ -140,13 +140,13 @@
       <section id="view-dashboard" class="content-view active">
         <!-- Quick Server Status Indicators -->
         <div class="kpi-grid">
-          <div class="kpi-card" onclick="switchView('proxmox')">
+          <div class="kpi-card" id="kpi-card-proxmox" onclick="switchView('proxmox')">
             <div class="kpi-header">
               <span class="kpi-label">Servidor Proxmox (jj)</span>
-              <span class="status-badge green">Online</span>
+              <span class="status-badge green" id="pve-status-badge">Online</span>
             </div>
             <div class="kpi-value text-white" id="pve-active-vms">2 Activas</div>
-            <div class="kpi-meta">LXC 200 (Coolify) · VM 102 (OPNsense)</div>
+            <div class="kpi-meta" id="pve-active-meta">LXC 200 (Coolify) · VM 102 (OPNsense)</div>
           </div>
 
           <div class="kpi-card" onclick="switchView('raspberry')">
@@ -243,12 +243,12 @@
             <div class="panel-header">
               <div class="panel-title-group">
                 <h3 class="panel-title">Instancias Proxmox VE (jj) en Vivo</h3>
-                <span class="panel-tag">2 Activas · 7 En Espera (On-Demand)</span>
+                <span class="panel-tag" id="pve-panel-tag">2 Activas · 7 En Espera (On-Demand)</span>
               </div>
               <button onclick="switchView('proxmox')" class="btn btn-sm">Ver Todas</button>
             </div>
             <div class="panel-body">
-              <div class="vm-live-list">
+              <div class="vm-live-list" id="pve-live-list">
                 <!-- LXC 200 Coolify -->
                 <div class="vm-live-item active">
                   <div class="vm-live-badge green">LXC 200</div>
@@ -352,19 +352,19 @@
       <section id="view-proxmox" class="content-view">
         <div class="server-hero">
           <div class="hero-left">
-            <div class="server-badge">Hipervisor Principal</div>
+            <div class="server-badge" id="pve-hero-badge">Hipervisor Principal</div>
             <h2 class="server-name">Proxmox VE · jj</h2>
             <p class="server-specs">Intel Core i5-8400 (6 Cores @ 2.80GHz) · 16 GB RAM · Proxmox 9.2</p>
           </div>
           <div class="hero-right">
-            <div class="stat-pill">
+            <div class="stat-pill" id="pve-ram-pill">
               <span class="stat-label">RAM Libre</span>
-              <span class="stat-value text-green">12.0 GB / 16 GB</span>
+              <span class="stat-value text-green" id="pve-ram-value">12.0 GB / 16 GB</span>
             </div>
-            <button onclick="openWorkspace('https://100.77.123.25:8006', 'Consola Proxmox VE (jj)')" class="btn btn-primary">
+            <button id="pve-console-btn" onclick="openWorkspace('https://100.77.123.25:8006', 'Consola Proxmox VE (jj)')" class="btn btn-primary">
               🖥️ Ver Consola Integrada
             </button>
-            <button onclick="openProxmoxPowerModal()" class="btn btn-danger-outline" title="Apagado seguro con auditoría de VMs y hardware">
+            <button id="pve-power-btn" onclick="openProxmoxPowerModal()" class="btn btn-danger-outline" title="Apagado seguro con auditoría de VMs y hardware">
               🛑 Apagado Seguro
             </button>
           </div>
