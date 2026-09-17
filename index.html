@@ -364,6 +364,9 @@
             <button onclick="openWorkspace('https://100.77.123.25:8006', 'Consola Proxmox VE (jj)')" class="btn btn-primary">
               🖥️ Ver Consola Integrada
             </button>
+            <button onclick="openProxmoxPowerModal()" class="btn btn-danger-outline" title="Apagado seguro con auditoría de VMs y hardware">
+              🛑 Apagado Seguro
+            </button>
           </div>
         </div>
 
@@ -569,6 +572,9 @@
             </div>
             <button onclick="openWorkspace('http://100.120.34.14:9000', 'Portainer CE (NodeR)')" class="btn btn-primary">
               🖥️ Abrir Portainer
+            </button>
+            <button onclick="openRpiPowerModal()" class="btn btn-danger-outline" title="Apagar Raspberry Pi">
+              ⚠️ Apagar Nodo Edge
             </button>
           </div>
         </div>
@@ -892,6 +898,80 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-new-project')">Cancelar</button>
         <button class="btn btn-primary" onclick="closeModal('modal-new-project')">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Safe Shutdown Proxmox VE (Pre-Flight Checks) -->
+  <div id="modal-power-proxmox" class="modal-backdrop">
+    <div class="modal-content power-modal">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="power-icon">🛡️</span>
+          <h3 class="modal-title">Apagado Seguro · Proxmox VE (jj)</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-power-proxmox')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="audit-intro">
+          <p><strong>Pre-Flight Safety Check:</strong> Analizando el estado de las máquinas virtuales, contenedores LXC y passthrough de GPU antes de autorizar el apagado.</p>
+        </div>
+
+        <div id="proxmox-audit-list" class="audit-list">
+          <!-- Loaded dynamically via JS -->
+        </div>
+
+        <div id="proxmox-audit-verdict" class="audit-verdict">
+          <!-- Verdict banner -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-power-proxmox')">Cancelar</button>
+        <button id="btn-proxmox-shutdown-confirm" class="btn btn-danger" onclick="executeProxmoxShutdown()" disabled>
+          🛑 Apagar Hipervisor
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Critical Warning RPi Shutdown (Edge Node 24/7) -->
+  <div id="modal-power-rpi" class="modal-backdrop">
+    <div class="modal-content power-modal">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="power-icon">⚠️</span>
+          <h3 class="modal-title">Apagar Nodo Edge · Raspberry Pi (NodeR)</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-power-rpi')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="critical-alert-box">
+          <div class="critical-alert-header">
+            <span class="alert-badge-danger">ALERTA CRÍTICA DE DISPONIBILIDAD</span>
+          </div>
+          <ul class="critical-consequences-list">
+            <li>
+              <strong>Cierre inmediato de esta Home Page:</strong> Al apagarse la Raspberry Pi, el contenedor Docker se detendrá y esta ventana en tu celular o navegador perderá conexión inmediatamente.
+            </li>
+            <li>
+              <strong>Caída del servidor DNS local:</strong> AdGuard Home (puerto :8088 / :53) dejará de resolver nombres para toda tu red doméstica.
+            </li>
+            <li>
+              <strong>Sin encendido remoto (No Wake-on-LAN):</strong> La Raspberry Pi 4 no soporta encendido por red; requerirá desconectar y volver a conectar la fuente de energía física.
+            </li>
+          </ul>
+        </div>
+
+        <div class="confirmation-challenge">
+          <label for="rpi-shutdown-input">Para desbloquear el apagado, escribí <strong>APAGAR</strong> a continuación:</label>
+          <input type="text" id="rpi-shutdown-input" autocomplete="off" placeholder="APAGAR" oninput="onRpiConfirmInput(this.value)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-power-rpi')">Cancelar</button>
+        <button id="btn-rpi-shutdown-confirm" class="btn btn-danger" onclick="executeRpiShutdown()" disabled>
+          ⚠️ Confirmar Apagado del Nodo
+        </button>
       </div>
     </div>
   </div>

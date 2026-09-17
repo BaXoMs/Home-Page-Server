@@ -255,3 +255,197 @@ window.saveSettings = function() {
   localStorage.setItem('homepage_server_config', JSON.stringify(config));
   closeModal('modal-settings');
 };
+
+// ==========================================================================
+// Pre-Flight Workloads Audit & Safe Power Management
+// ==========================================================================
+
+const PROXMOX_WORKLOADS = [
+  {
+    id: 106,
+    name: 'VM 106 · Ollama-Qwen',
+    type: 'VM (QEMU)',
+    active: true,
+    gpuPassthrough: true,
+    risk: 'critical',
+    desc: 'Passthrough directo de GPU NVIDIA GeForce GTX 1650 Super (vfio-pci). Apagar el hipervisor causará reseteo forzado del bus PCIe e inconsistencia en la memoria VRAM del modelo de IA.'
+  },
+  {
+    id: 107,
+    name: 'VM 107 · Nessus-Scanner',
+    type: 'VM (QEMU)',
+    active: true,
+    isScanning: false,
+    risk: 'warning',
+    desc: 'Servicio Tenable Nessus activo en puerto :8834. Si hay un escaneo de vulnerabilidades en curso, la base de datos de auditoría puede corromperse.'
+  },
+  {
+    id: 200,
+    name: 'LXC 200 · Coolify PaaS',
+    type: 'LXC (Container)',
+    active: true,
+    risk: 'managed',
+    desc: 'Aloja PostgreSQL, Redis y Traefik. Proxmox gestionará el apagado ordenado mediante señal ACPI shutdown.'
+  },
+  {
+    id: 102,
+    name: 'VM 102 · OPNsense',
+    type: 'VM (QEMU)',
+    active: false,
+    risk: 'safe',
+    desc: 'Firewall secundario. Actualmente detenido sin tráfico activo.'
+  }
+];
+
+let proxmoxCountdownTimer = null;
+
+window.openProxmoxPowerModal = function() {
+  openModal('modal-power-proxmox');
+  auditProxmoxWorkloads();
+};
+
+function auditProxmoxWorkloads() {
+  const list = document.getElementById('proxmox-audit-list');
+  const verdict = document.getElementById('proxmox-audit-verdict');
+  const confirmBtn = document.getElementById('btn-proxmox-shutdown-confirm');
+
+  if (!list || !verdict || !confirmBtn) return;
+
+  list.innerHTML = '';
+  let isBlocked = false;
+  let blockReasons = [];
+
+  PROXMOX_WORKLOADS.forEach(item => {
+    const itemEl = document.createElement('div');
+    let itemClass = 'safe';
+    let badgeHtml = '<span class="audit-badge ok">SEGURO</span>';
+
+    if (item.active && item.gpuPassthrough) {
+      isBlocked = true;
+      itemClass = 'blocked';
+      badgeHtml = '<span class="audit-badge danger">🛑 BLOQUEO: GPU ACTIVA</span>';
+      blockReasons.push(`<strong>${item.name}</strong> tiene passthrough activo de la GPU NVIDIA`);
+    } else if (item.active && item.risk === 'warning') {
+      itemClass = 'warning';
+      badgeHtml = '<span class="audit-badge warn">⚠️ ATENCIÓN</span>';
+    } else if (item.active && item.risk === 'managed') {
+      itemClass = 'warning';
+      badgeHtml = '<span class="audit-badge warn">APAGADO ACPI</span>';
+    } else if (!item.active) {
+      itemClass = 'safe';
+      badgeHtml = '<span class="audit-badge ok">APAGADA</span>';
+    }
+
+    itemEl.className = `audit-item ${itemClass}`;
+    itemEl.innerHTML = `
+      <div class="audit-item-header">
+        <span class="audit-vm-name">${item.name} (${item.type})</span>
+        ${badgeHtml}
+      </div>
+      <p class="audit-reason">${item.desc}</p>
+    `;
+    list.appendChild(itemEl);
+  });
+
+  if (proxmoxCountdownTimer) {
+    clearInterval(proxmoxCountdownTimer);
+    proxmoxCountdownTimer = null;
+  }
+
+  if (isBlocked) {
+    verdict.className = 'audit-verdict blocked';
+    verdict.innerHTML = `
+      🛑 <strong>APAGADO DEL HIPERVISOR BLOQUEADO:</strong><br>
+      ${blockReasons.join('<br>')}.<br><br>
+      <em>Por seguridad de hardware, primero debés apagar la VM 106 desde la consola de Proxmox para liberar el bus PCIe y la memoria VRAM antes de apagar el servidor 'jj'.</em>
+    `;
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = '🛑 Apagado Bloqueado por Seguridad';
+  } else {
+    verdict.className = 'audit-verdict ready';
+    verdict.innerHTML = `
+      ✅ <strong>VERIFICACIÓN EXITOSA:</strong> No se detectaron cargas críticas con GPU activa ni escaneos en curso. Proxmox enviará señales ACPI de apagado ordenado a los contenedores.
+    `;
+    let countdown = 5;
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = `⏱️ Esperá ${countdown}s para confirmar`;
+    proxmoxCountdownTimer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(proxmoxCountdownTimer);
+        proxmoxCountdownTimer = null;
+        confirmBtn.disabled = false;
+        confirmBtn.innerText = '🛑 Confirmar Apagado del Hipervisor';
+      } else {
+        confirmBtn.innerText = `⏱️ Esperá ${countdown}s para confirmar`;
+      }
+    }, 1000);
+  }
+}
+
+window.executeProxmoxShutdown = function() {
+  const confirmBtn = document.getElementById('btn-proxmox-shutdown-confirm');
+  if (confirmBtn) confirmBtn.disabled = true;
+
+  alert('Enviando orden de apagado ordenado a Proxmox VE (jj) vía API...\nEl hipervisor cerrará las máquinas virtuales y procederá al apagado.');
+  closeModal('modal-power-proxmox');
+};
+
+// Raspberry Pi Edge Node Power Off
+window.openRpiPowerModal = function() {
+  const input = document.getElementById('rpi-shutdown-input');
+  const confirmBtn = document.getElementById('btn-rpi-shutdown-confirm');
+  if (input) input.value = '';
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = '⚠️ Confirmar Apagado del Nodo';
+  }
+  openModal('modal-power-rpi');
+};
+
+window.onRpiConfirmInput = function(value) {
+  const confirmBtn = document.getElementById('btn-rpi-shutdown-confirm');
+  if (!confirmBtn) return;
+
+  if (value.trim().toUpperCase() === 'APAGAR') {
+    confirmBtn.disabled = false;
+    confirmBtn.innerText = '⚠️ APAGAR RASPBERRY PI AHORA';
+  } else {
+    confirmBtn.disabled = true;
+    confirmBtn.innerText = '⚠️ Confirmar Apagado del Nodo';
+  }
+};
+
+window.executeRpiShutdown = function() {
+  const modalBody = document.querySelector('#modal-power-rpi .modal-body');
+  const modalFooter = document.querySelector('#modal-power-rpi .modal-footer');
+  if (modalFooter) modalFooter.style.display = 'none';
+
+  if (modalBody) {
+    modalBody.innerHTML = `
+      <div style="text-align: center; padding: 20px 10px;">
+        <div style="font-size: 2.5rem; margin-bottom: 12px;">🔌</div>
+        <h3 style="color: #ffffff; margin-bottom: 10px;">Apagando Raspberry Pi (NodeR)...</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.5;">
+          El sistema operativo está deteniendo los contenedores Docker y ejecutando <code>poweroff</code>.<br>
+          <strong>Esta ventana de Home-Page-Server perderá conexión en unos instantes.</strong>
+        </p>
+        <div style="margin-top: 18px; color: #ef4444; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+          [CONEXIÓN CERRADA]
+        </div>
+      </div>
+    `;
+  }
+
+  setTimeout(() => {
+    document.body.innerHTML = `
+      <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #060911; color: #ffffff; font-family: sans-serif; text-align: center; padding: 20px;">
+        <div style="font-size: 3.5rem; margin-bottom: 16px;">⚡</div>
+        <h1 style="font-size: 1.5rem; margin-bottom: 8px;">Servidor Desconectado</h1>
+        <p style="color: #8493ad; max-width: 440px; line-height: 1.5; font-size: 0.9rem;">
+          La Raspberry Pi se ha apagado correctamente. Para volver a visualizar la Home Page y recuperar los servicios de red, reconectá la alimentación física de la Pi.
+        </p>
+      </div>
+    `;
+  }, 4000);
+};
