@@ -494,39 +494,51 @@ const PROXMOX_WORKLOADS = [
     id: 106,
     name: 'VM 106 · Ollama-Qwen',
     type: 'VM (QEMU)',
-    active: true,
+    active: false, // En Proxmox está Apagada (On-demand)
     gpuPassthrough: true,
     risk: 'critical',
-    desc: 'Passthrough directo de GPU NVIDIA GeForce GTX 1650 Super (vfio-pci). Apagar el hipervisor causará reseteo forzado del bus PCIe e inconsistencia en la memoria VRAM del modelo de IA.'
+    desc: 'Passthrough de GPU NVIDIA GeForce GTX 1650 Super (vfio-pci). Al estar APAGADA, el bus PCIe y la memoria VRAM están liberados.'
   },
   {
     id: 107,
     name: 'VM 107 · Nessus-Scanner',
     type: 'VM (QEMU)',
-    active: true,
+    active: false, // En Proxmox está en Standby / Aprovisionada
     isScanning: false,
     risk: 'warning',
-    desc: 'Servicio Tenable Nessus activo en puerto :8834. Si hay un escaneo de vulnerabilidades en curso, la base de datos de auditoría puede corromperse.'
+    desc: 'Servicio Tenable Nessus. Actualmente en Standby / Aprovisionada sin escaneos activos.'
   },
   {
     id: 200,
     name: 'LXC 200 · Coolify PaaS',
     type: 'LXC (Container)',
-    active: true,
+    active: true, // Corriendo
     risk: 'managed',
     desc: 'Aloja PostgreSQL, Redis y Traefik. Proxmox gestionará el apagado ordenado mediante señal ACPI shutdown.'
   },
   {
     id: 102,
-    name: 'VM 102 · OPNsense',
+    name: 'VM 102 · opnsense-lab',
     type: 'VM (QEMU)',
-    active: false,
-    risk: 'safe',
-    desc: 'Firewall secundario. Actualmente detenido sin tráfico activo.'
+    active: true, // Corriendo
+    risk: 'managed',
+    desc: 'Router / Firewall secundario activo. Proxmox gestionará el apagado ordenado mediante señal ACPI shutdown.'
   }
 ];
 
 let proxmoxCountdownTimer = null;
+
+// Toggle VM 106 state for live simulation
+window.toggleVm106Simulation = function() {
+  const vm106 = PROXMOX_WORKLOADS.find(w => w.id === 106);
+  if (vm106) {
+    vm106.active = !vm106.active;
+    vm106.desc = vm106.active
+      ? 'Passthrough directo de GPU NVIDIA GeForce GTX 1650 Super (vfio-pci) ACTIVO. Apagar el hipervisor causará reseteo forzado del bus PCIe e inconsistencia en la memoria VRAM.'
+      : 'Passthrough de GPU NVIDIA GeForce GTX 1650 Super (vfio-pci). Al estar APAGADA, el bus PCIe y la memoria VRAM están liberados.';
+    auditProxmoxWorkloads();
+  }
+};
 
 window.openProxmoxPowerModal = function() {
   openModal('modal-power-proxmox');
@@ -562,7 +574,9 @@ function auditProxmoxWorkloads() {
       badgeHtml = '<span class="audit-badge warn">APAGADO ACPI</span>';
     } else if (!item.active) {
       itemClass = 'safe';
-      badgeHtml = '<span class="audit-badge ok">APAGADA</span>';
+      badgeHtml = item.gpuPassthrough 
+        ? '<span class="audit-badge ok">APAGADA (GPU LIBRE)</span>' 
+        : '<span class="audit-badge ok">APAGADA / STANDBY</span>';
     }
 
     itemEl.className = `audit-item ${itemClass}`;
@@ -587,13 +601,19 @@ function auditProxmoxWorkloads() {
       🛑 <strong>APAGADO DEL HIPERVISOR BLOQUEADO:</strong><br>
       ${blockReasons.join('<br>')}.<br><br>
       <em>Por seguridad de hardware, primero debés apagar la VM 106 desde la consola de Proxmox para liberar el bus PCIe y la memoria VRAM antes de apagar el servidor 'jj'.</em>
+      <div style="margin-top: 10px; text-align: right;">
+        <button type="button" onclick="toggleVm106Simulation()" class="btn btn-xs btn-secondary" style="font-size: 0.72rem; padding: 3px 8px;">🔄 Simular que VM 106 está Apagada</button>
+      </div>
     `;
     confirmBtn.disabled = true;
     confirmBtn.innerText = '🛑 Apagado Bloqueado por Seguridad';
   } else {
     verdict.className = 'audit-verdict ready';
     verdict.innerHTML = `
-      ✅ <strong>VERIFICACIÓN EXITOSA:</strong> No se detectaron cargas críticas con GPU activa ni escaneos en curso. Proxmox enviará señales ACPI de apagado ordenado a los contenedores.
+      ✅ <strong>VERIFICACIÓN EXITOSA:</strong> No se detectaron cargas críticas con GPU activa ni escaneos en curso. La VM 106 está apagada (bus PCIe liberado). Proxmox enviará señales ACPI de apagado ordenado a los contenedores activos (Coolify y OPNsense).
+      <div style="margin-top: 10px; text-align: right;">
+        <button type="button" onclick="toggleVm106Simulation()" class="btn btn-xs btn-secondary" style="font-size: 0.72rem; padding: 3px 8px;">⚡ Simular encendido de VM 106 (con GPU)</button>
+      </div>
     `;
     let countdown = 5;
     confirmBtn.disabled = true;
