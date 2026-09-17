@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
-  fireman-dashboard:
-    container_name: fireman-dashboard
+  homepage-server:
+    container_name: homepage-server
     build:
       context: .
       dockerfile: Dockerfile
-    image: fireman-dashboard:latest
+    image: homepage-server:latest
     ports:
       - "3005:80"
     restart: unless-stopped

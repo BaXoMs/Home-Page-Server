@@ -1,15 +1,12 @@
 ---
-title: "NodeR · Fireman Dashboard"
+title: "Home-Page-Server"
 background: "#060911"
 theme: dark
 color: slate
 layout:
-  Red & DNS:
+  Servidores & Infraestructura:
     style: row
     columns: 2
-  Seguridad & SOC:
-    style: row
-    columns: 2
-  Monitoreo & Virtualizacion:
+  Servicios Edge:
     style: row
     columns: 2

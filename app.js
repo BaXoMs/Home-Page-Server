@@ -1,76 +1,75 @@
 /**
- * NodeR · Fireman Dashboard Logic & Interactivity
- * High-performance chart rendering, API hooks & modal management
+ * Home-Page-Server · Control Center Logic & Router
+ * Modular multi-view architecture, network telemetry & server state
  */
 
-// Default configuration endpoints (persisted in localStorage)
+// Default configuration endpoints
 const DEFAULT_CONFIG = {
   proxmox: 'https://100.77.123.25:8006',
   noder: 'http://100.120.34.14:9000',
-  wazuh: 'https://10.10.60.88',
-  nessus: 'https://10.10.60.88:8834',
-  watchtower: 'http://100.120.34.14:9000',
-  cctv: 'http://192.168.0.200'
 };
 
-// State
 let config = { ...DEFAULT_CONFIG };
-let activeTrafficLayer = 'corp'; // 'corp' or 'byod'
 
-// Traffic time series data (last 12 hours)
-const trafficData = {
-  corp: [
-    { hour: '-12h', val: 140 },
-    { hour: '-10h', val: 115 },
-    { hour: '-8h',  val: 135 },
-    { hour: '-6h',  val: 90 },
-    { hour: '-4h',  val: 105 },
-    { hour: '-2h',  val: 70 },
-    { hour: '-1h',  val: 85 },
-    { hour: 'now',  val: 60 }
-  ],
-  byod: [
-    { hour: '-12h', val: 165 },
-    { hour: '-10h', val: 150 },
-    { hour: '-8h',  val: 155 },
-    { hour: '-6h',  val: 135 },
-    { hour: '-4h',  val: 145 },
-    { hour: '-2h',  val: 125 },
-    { hour: '-1h',  val: 135 },
-    { hour: 'now',  val: 130 }
-  ]
+// Network traffic time series data
+const trafficPoints = {
+  down: [25, 38, 42, 35, 68, 84, 52, 48],
+  up:   [12, 18, 14, 22, 28, 32, 20, 18]
 };
 
-// Initialize dashboard on DOM ready
+// View metadata
+const viewTitles = {
+  dashboard: {
+    title: 'Tráfico & Resumen de Red',
+    subtitle: 'Telemetría de ancho de banda y salud general de los servidores'
+  },
+  proxmox: {
+    title: 'Servidor Proxmox VE (jj)',
+    subtitle: 'Hipervisor central, recursos de cómputo y estado de máquinas virtuales / LXCs'
+  },
+  raspberry: {
+    title: 'Raspberry Pi 4 (NodeR)',
+    subtitle: 'Nodo edge 24/7, contenedores Docker y servicios esenciales de red'
+  },
+  services: {
+    title: 'Directorio de Servicios Web',
+    subtitle: 'Accesos rápidos consolidados por Tailscale y Red Local'
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-  loadStoredConfig();
+  loadConfig();
   renderTrafficChart();
-  initModals();
-  initBarsTooltips();
-  setupLiveRefresh();
+  setupLiveTraffic();
 });
 
-// Load config from localStorage
-function loadStoredConfig() {
-  const saved = localStorage.getItem('fireman_config');
-  if (saved) {
-    try {
-      config = { ...DEFAULT_CONFIG, ...JSON.parse(saved) };
-    } catch (e) {
-      console.error('Error loading config:', e);
-    }
-  }
-}
+// View Router
+window.switchView = function(viewId) {
+  // Update sidebar active state
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.getAttribute('data-view') === viewId);
+  });
 
-// Generate smooth cubic bezier SVG path
-function getBezierPath(points, width, height, closeArea = false) {
-  const n = points.length;
+  // Update content view visibility
+  document.querySelectorAll('.content-view').forEach(view => {
+    view.classList.toggle('active', view.id === `view-${viewId}`);
+  });
+
+  // Update topbar heading
+  const meta = viewTitles[viewId] || viewTitles.dashboard;
+  document.getElementById('view-title').innerText = meta.title;
+  document.getElementById('view-subtitle').innerText = meta.subtitle;
+};
+
+// Generate smooth cubic bezier SVG curve
+function getBezierPath(data, width, height, maxY = 100, closeArea = false) {
+  const n = data.length;
   if (n === 0) return '';
 
   const stepX = width / (n - 1);
-  const coords = points.map((p, i) => ({
+  const coords = data.map((val, i) => ({
     x: i * stepX,
-    y: p.val
+    y: height - (val / maxY) * height
   }));
 
   let d = `M ${coords[0].x} ${coords[0].y}`;
@@ -97,121 +96,56 @@ function getBezierPath(points, width, height, closeArea = false) {
   return d;
 }
 
-// Render traffic chart SVG
+// Render real-time SVG network traffic
 function renderTrafficChart() {
-  const width = 650;
-  const height = 200;
+  const width = 800;
+  const height = 240;
+  const maxY = 100; // Mbps scale
 
-  // Render BYOD (secondary/background line)
-  const byodPath = getBezierPath(trafficData.byod, width, height, false);
-  const byodArea = getBezierPath(trafficData.byod, width, height, true);
+  // Down
+  const downLine = getBezierPath(trafficPoints.down, width, height, maxY, false);
+  const downArea = getBezierPath(trafficPoints.down, width, height, maxY, true);
+  document.getElementById('path-down-line').setAttribute('d', downLine);
+  document.getElementById('path-down-area').setAttribute('d', downArea);
 
-  const pathByodLine = document.getElementById('path-byod-line');
-  const pathByodArea = document.getElementById('path-byod-area');
-  if (pathByodLine && pathByodArea) {
-    pathByodLine.setAttribute('d', byodPath);
-    pathByodArea.setAttribute('d', byodArea);
-  }
-
-  // Render CORP (primary line matching mockup)
-  const corpPath = getBezierPath(trafficData.corp, width, height, false);
-  const corpArea = getBezierPath(trafficData.corp, width, height, true);
-
-  const pathCorpLine = document.getElementById('path-corp-line');
-  const pathCorpArea = document.getElementById('path-corp-area');
-  if (pathCorpLine && pathCorpArea) {
-    pathCorpLine.setAttribute('d', corpPath);
-    pathCorpArea.setAttribute('d', corpArea);
-  }
+  // Up
+  const upLine = getBezierPath(trafficPoints.up, width, height, maxY, false);
+  const upArea = getBezierPath(trafficPoints.up, width, height, maxY, true);
+  document.getElementById('path-up-line').setAttribute('d', upLine);
+  document.getElementById('path-up-area').setAttribute('d', upArea);
 }
 
-// Switch traffic layer filter
-window.switchTrafficLayer = function(layer) {
-  activeTrafficLayer = layer;
-  document.getElementById('tab-corp').classList.toggle('active', layer === 'corp');
-  document.getElementById('tab-byod').classList.toggle('active', layer === 'byod');
+// Subtle live traffic fluctuation
+function setupLiveTraffic() {
+  setInterval(() => {
+    // Shift points
+    const nextDown = Math.max(20, Math.min(90, trafficPoints.down[trafficPoints.down.length - 1] + (Math.random() * 16 - 8)));
+    const nextUp   = Math.max(10, Math.min(45, trafficPoints.up[trafficPoints.up.length - 1] + (Math.random() * 8 - 4)));
 
-  const pathCorpLine = document.getElementById('path-corp-line');
-  const pathCorpArea = document.getElementById('path-corp-area');
-  const pathByodLine = document.getElementById('path-byod-line');
-  const pathByodArea = document.getElementById('path-byod-area');
+    trafficPoints.down.shift();
+    trafficPoints.down.push(nextDown);
 
-  if (layer === 'corp') {
-    pathCorpLine.style.stroke = '#00f2fe';
-    pathCorpLine.style.strokeWidth = '2.5px';
-    pathCorpArea.style.opacity = '1';
-    pathByodLine.style.stroke = '#2563eb';
-    pathByodLine.style.strokeWidth = '1.5px';
-    pathByodArea.style.opacity = '0.3';
-  } else {
-    pathByodLine.style.stroke = '#00f2fe';
-    pathByodLine.style.strokeWidth = '2.5px';
-    pathByodArea.style.opacity = '1';
-    pathCorpLine.style.stroke = '#2563eb';
-    pathCorpLine.style.strokeWidth = '1.5px';
-    pathCorpArea.style.opacity = '0.3';
-  }
+    trafficPoints.up.shift();
+    trafficPoints.up.push(nextUp);
+
+    renderTrafficChart();
+
+    // Update KPI indicators
+    const speedDown = document.getElementById('speed-down');
+    const speedUp = document.getElementById('speed-up');
+    if (speedDown) speedDown.innerHTML = `${nextDown.toFixed(1)} <span class="unit">Mbps</span>`;
+    if (speedUp) speedUp.innerHTML = `${nextUp.toFixed(1)} <span class="unit">Mbps</span>`;
+  }, 4000);
+}
+
+// Refresh data handler
+window.refreshData = function() {
+  const btn = document.getElementById('btn-refresh');
+  btn.style.transform = 'rotate(180deg)';
+  setTimeout(() => { btn.style.transform = 'none'; }, 400);
 };
 
-// Tooltip for bars
-function initBarsTooltips() {
-  const bars = document.querySelectorAll('.bar-group');
-  const tooltip = document.getElementById('chart-tooltip');
-
-  bars.forEach(bar => {
-    bar.addEventListener('mouseenter', (e) => {
-      const vlan = bar.getAttribute('data-vlan');
-      const label = bar.getAttribute('data-label');
-      const vulns = bar.getAttribute('data-vulns');
-
-      tooltip.innerHTML = `<strong>${vlan} (${label})</strong><br>Vulnerabilidades: ${vulns}`;
-      tooltip.style.display = 'block';
-    });
-
-    bar.addEventListener('mousemove', (e) => {
-      const rect = bar.getBoundingClientRect();
-      tooltip.style.left = `${rect.left + rect.width / 2 - 60}px`;
-      tooltip.style.top = `${rect.top - 45}px`;
-    });
-
-    bar.addEventListener('mouseleave', () => {
-      tooltip.style.display = 'none';
-    });
-  });
-}
-
-// Modal management
-function initModals() {
-  const btnSettings = document.getElementById('btn-settings');
-  if (btnSettings) {
-    btnSettings.addEventListener('click', () => {
-      document.getElementById('cfg-proxmox').value = config.proxmox;
-      document.getElementById('cfg-noder').value = config.noder;
-      document.getElementById('cfg-wazuh').value = config.wazuh;
-      document.getElementById('cfg-nessus').value = config.nessus;
-      openModal('modal-settings');
-    });
-  }
-
-  const btnNotifications = document.getElementById('btn-notifications');
-  if (btnNotifications) {
-    btnNotifications.addEventListener('click', () => {
-      showServiceModal(
-        'Centro de Alertas SOC',
-        `
-        <div style="font-size: 0.85rem; line-height: 1.6; color: #94a3b8;">
-          <p><strong style="color: #22c55e;">[OK] Proxmox VE (jj):</strong> Hipervisor operativo (12 GB RAM disponibles).</p>
-          <p><strong style="color: #00f2fe;">[OK] NodeR:</strong> Servicios activos en Portainer (AdGuard, Vaultwarden, NPM).</p>
-          <p><strong style="color: #ff6363;">[ALERTA] Wazuh:</strong> 37 eventos detectados en las últimas 24h.</p>
-          <p><strong style="color: #ff6363;">[CRÍTICO] Nessus:</strong> 12 vulnerabilidades críticas detectadas en VLAN 40.</p>
-        </div>
-        `,
-        config.wazuh
-      );
-    });
-  }
-}
-
+// Modal controls
 window.openModal = function(id) {
   const m = document.getElementById(id);
   if (m) m.classList.add('active');
@@ -222,74 +156,16 @@ window.closeModal = function(id) {
   if (m) m.classList.remove('active');
 };
 
+function loadConfig() {
+  const saved = localStorage.getItem('homepage_server_config');
+  if (saved) {
+    try { config = { ...DEFAULT_CONFIG, ...JSON.parse(saved) }; } catch (e) {}
+  }
+}
+
 window.saveSettings = function() {
   config.proxmox = document.getElementById('cfg-proxmox').value.trim();
   config.noder = document.getElementById('cfg-noder').value.trim();
-  config.wazuh = document.getElementById('cfg-wazuh').value.trim();
-  config.nessus = document.getElementById('cfg-nessus').value.trim();
-
-  localStorage.setItem('fireman_config', JSON.stringify(config));
+  localStorage.setItem('homepage_server_config', JSON.stringify(config));
   closeModal('modal-settings');
 };
-
-// Open service or show quick action dialog
-window.openService = function(serviceKey) {
-  const serviceMap = {
-    proxmox: {
-      title: 'Proxmox Virtual Environment (jj)',
-      url: config.proxmox,
-      body: '<p>Hipervisor central de cómputo y virtualización.</p><p style="color:#64748b; font-size:0.8rem; margin-top:8px;">IP Tailscale: 100.77.123.25:8006<br>IP LAN: 192.168.0.104:8006</p>'
-    },
-    wazuh: {
-      title: 'Wazuh SOC & SIEM',
-      url: config.wazuh,
-      body: '<p>Monitoreo continuo de eventos de seguridad y detección de amenazas.</p><p style="color:#64748b; font-size:0.8rem; margin-top:8px;">Allowlist activa para escáner Nessus (10.10.60.88)</p>'
-    },
-    nessus: {
-      title: 'Tenable Nessus Scanner (VM 107)',
-      url: config.nessus,
-      body: '<p>Escáner de vulnerabilidades perimetral e interno para VLANs.</p><p style="color:#64748b; font-size:0.8rem; margin-top:8px;">Puerto 8834 | VM 107 en Proxmox</p>'
-    },
-    watchtower: {
-      title: 'Watchtower Updater & Monitor',
-      url: config.noder,
-      body: '<p>Auditoría y detección de imágenes desactualizadas en modo monitor-only.</p><p style="color:#64748b; font-size:0.8rem; margin-top:8px;">Ejecutándose en Raspberry Pi (NodeR)</p>'
-    },
-    cctv: {
-      title: 'CCTV / IoT Network Dashboard',
-      url: config.cctv,
-      body: '<p>Monitoreo de cámaras de seguridad y dispositivos en VLAN 50.</p>'
-    },
-    portainer: {
-      title: 'Portainer CE (NodeR)',
-      url: config.noder,
-      body: '<p>Gestor de contenedores Docker en Raspberry Pi 4.</p>'
-    }
-  };
-
-  const item = serviceMap[serviceKey];
-  if (!item) return;
-
-  showServiceModal(item.title, item.body, item.url);
-};
-
-function showServiceModal(title, bodyHtml, targetUrl) {
-  document.getElementById('modal-service-title').innerText = title;
-  document.getElementById('modal-service-body').innerHTML = bodyHtml;
-  document.getElementById('modal-service-link').href = targetUrl;
-  openModal('modal-service');
-}
-
-// Live refresh simulation (subtle realistic fluctuations)
-function setupLiveRefresh() {
-  setInterval(() => {
-    // Subtle pulse effect on Wazuh count
-    const wCount = document.getElementById('wazuh-count');
-    if (wCount && Math.random() > 0.7) {
-      const current = parseInt(wCount.innerText);
-      const delta = Math.random() > 0.5 ? 1 : -1;
-      const next = Math.max(30, Math.min(45, current + delta));
-      wCount.innerText = next;
-    }
-  }, 10000);
-}
