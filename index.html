@@ -48,6 +48,13 @@
           <span>Servidor Proxmox (jj)</span>
         </button>
 
+        <button class="nav-item" data-view="security" onclick="switchView('security')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span>Red & Router Archer C50</span>
+        </button>
+
         <button class="nav-item" data-view="raspberry" onclick="switchView('raspberry')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
@@ -64,13 +71,21 @@
           <span>Raspberry Pi (NodeR)</span>
         </button>
 
+        <button class="nav-item" data-view="projects" onclick="switchView('projects')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <span>Mis Proyectos & Apps</span>
+        </button>
+
         <button class="nav-item" data-view="services" onclick="switchView('services')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="2" y1="12" x2="22" y2="12"></line>
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
           </svg>
-          <span>Servicios Web</span>
+          <span>Directorio de Accesos</span>
         </button>
       </nav>
 
@@ -108,7 +123,7 @@
         </div>
       </header>
 
-      <!-- VIEW 1: DASHBOARD PRINCIPAL (Tráfico y Resumen de Red) -->
+      <!-- VIEW 1: DASHBOARD PRINCIPAL (Tráfico y Resumen) -->
       <section id="view-dashboard" class="content-view active">
         <!-- Quick Server Status Indicators -->
         <div class="kpi-grid">
@@ -127,7 +142,7 @@
               <span class="status-badge green">Online</span>
             </div>
             <div class="kpi-value text-cyan" id="rpi-docker-count">6 Contenedores</div>
-            <div class="kpi-meta">Uptime: 3+ días · Swap: 2 GB Activo</div>
+            <div class="kpi-meta">Nodo 24/7 · Swap: 2 GB Activo</div>
           </div>
 
           <div class="kpi-card">
@@ -149,7 +164,7 @@
           </div>
         </div>
 
-        <!-- Main Network Traffic Chart (Hero element) -->
+        <!-- Main Network Traffic Chart -->
         <div class="panel-card traffic-panel">
           <div class="panel-header">
             <div class="panel-title-group">
@@ -222,7 +237,9 @@
               <span class="stat-label">RAM Libre</span>
               <span class="stat-value text-green">12.0 GB / 16 GB</span>
             </div>
-            <a href="https://100.77.123.25:8006" target="_blank" class="btn btn-primary">Abrir Consola PVE</a>
+            <button onclick="openWorkspace('https://100.77.123.25:8006', 'Consola Proxmox VE (jj)')" class="btn btn-primary">
+              🖥️ Ver Consola Integrada
+            </button>
           </div>
         </div>
 
@@ -266,17 +283,17 @@
                 <td><span class="badge-id">107</span></td>
                 <td><strong>Nessus-Scanner</strong></td>
                 <td>QEMU VM</td>
-                <td><span class="status-badge gray">En Espera</span></td>
+                <td><span class="status-badge gray">Aprovisionada</span></td>
                 <td>2 Cores</td>
                 <td>4096 MB (2G Balloon)</td>
                 <td>32 GB</td>
-                <td>Escáner de Red (perfil optimizado)</td>
+                <td>Escáner Tenable Nessus Essentials</td>
               </tr>
               <tr>
                 <td><span class="badge-id">106</span></td>
                 <td><strong>Ollama-Qwen</strong></td>
                 <td>QEMU VM</td>
-                <td><span class="status-badge gray">Apagada</span></td>
+                <td><span class="status-badge gray">Apagada (On-demand)</span></td>
                 <td>4 Cores</td>
                 <td>8192 MB</td>
                 <td>72 GB</td>
@@ -286,11 +303,11 @@
                 <td><span class="badge-id">100</span></td>
                 <td><strong>PopOs</strong></td>
                 <td>QEMU VM</td>
-                <td><span class="status-badge gray">Apagada</span></td>
+                <td><span class="status-badge gray">Apagada (On-demand)</span></td>
                 <td>4 Cores</td>
                 <td>8192 MB</td>
                 <td>150 GB</td>
-                <td>Entorno de Escritorio Linux</td>
+                <td>Entorno de Desarrollo Linux (NVIDIA)</td>
               </tr>
               <tr>
                 <td><span class="badge-id">101</span></td>
@@ -310,7 +327,7 @@
                 <td>2 Cores</td>
                 <td>4096 MB</td>
                 <td>40 GB</td>
-                <td>Auditoría de Seguridad</td>
+                <td>Pentesting & Auditoría</td>
               </tr>
               <tr>
                 <td><span class="badge-id">104</span></td>
@@ -337,11 +354,87 @@
         </div>
       </section>
 
-      <!-- VIEW 3: RASPBERRY PI (NodeR) -->
+      <!-- VIEW 3: RED & ROUTER ARCHER C50 & NESSUS -->
+      <section id="view-security" class="content-view">
+        <div class="server-hero">
+          <div class="hero-left">
+            <div class="server-badge">Perímetro & Conectividad Física</div>
+            <h2 class="server-name">Router TP-Link Archer C50</h2>
+            <p class="server-specs">Gateway Principal · Puerta de Enlace: 192.168.0.1 · Dual Band AC1200</p>
+          </div>
+          <div class="hero-right">
+            <div class="stat-pill">
+              <span class="stat-label">Estado de Gateway</span>
+              <span class="stat-value text-green">Activo (LAN)</span>
+            </div>
+            <button onclick="openWorkspace('http://192.168.0.1', 'Router TP-Link Archer C50')" class="btn btn-primary">
+              Abrir Panel de Router
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-2-cols">
+          <!-- Router Details Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Parámetros del Router Archer C50</h3>
+            </div>
+            <div class="panel-body">
+              <div class="detail-row">
+                <span class="detail-key">IP de Gestión:</span>
+                <span class="detail-val">192.168.0.1</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Rango DHCP:</span>
+                <span class="detail-val">192.168.0.100 - 192.168.0.250</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">DNS Primario asignado:</span>
+                <span class="detail-val text-cyan">192.168.0.200 (AdGuard en NodeR)</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">WiFi Bandas:</span>
+                <span class="detail-val">2.4 GHz (300 Mbps) / 5 GHz (867 Mbps)</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nessus Security Scanner Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <h3 class="panel-title">Tenable Nessus Essentials</h3>
+              <span class="status-badge gray">VM 107 en Proxmox</span>
+            </div>
+            <div class="panel-body">
+              <div class="detail-row">
+                <span class="detail-key">Puerto de Escaneo:</span>
+                <span class="detail-val">:8834 (HTTPS)</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Perfil de Recursos:</span>
+                <span class="detail-val">2 Cores / 4 GB RAM (Balloon 2 GB)</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Propósito:</span>
+                <span class="detail-val">Escaneo on-demand de vulnerabilidades de red</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Consumo:</span>
+                <span class="detail-val text-green">Optimizada para no colapsar el Host</span>
+              </div>
+            </div>
+            <div class="panel-footer">
+              <a href="https://100.77.123.25:8834" target="_blank" class="link-btn">Ir a Consola Nessus</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: RASPBERRY PI (NodeR) -->
       <section id="view-raspberry" class="content-view">
         <div class="server-hero">
           <div class="hero-left">
-            <div class="server-badge">Nodo Edge 24/7</div>
+            <div class="server-badge">Nodo Edge 24/7 (Bajo Consumo ~5W)</div>
             <h2 class="server-name">Raspberry Pi 4 · NodeR</h2>
             <p class="server-specs">ARM Cortex-A72 (4 Cores) · 4 GB RAM + 2 GB Swap · SSD 256 GB</p>
           </div>
@@ -350,7 +443,9 @@
               <span class="stat-label">Almacenamiento Libre</span>
               <span class="stat-value text-green">213 GB / 229 GB</span>
             </div>
-            <a href="http://100.120.34.14:9000" target="_blank" class="btn btn-primary">Abrir Portainer</a>
+            <button onclick="openWorkspace('http://100.120.34.14:9000', 'Portainer CE (NodeR)')" class="btn btn-primary">
+              🖥️ Abrir Portainer
+            </button>
           </div>
         </div>
 
@@ -360,40 +455,40 @@
             <div class="svc-icon">🌐</div>
             <div class="svc-info">
               <div class="svc-name">AdGuard Home</div>
-              <div class="svc-desc">DNS seguro y bloqueo de anuncios</div>
-              <div class="svc-port">Puertos: 53, 3000, 8088</div>
+              <div class="svc-desc">DNS seguro y filtrado de telemetría</div>
+              <div class="svc-port">Web Admin: :8088 | DNS: :53</div>
             </div>
-            <a href="http://100.120.34.14:3000" target="_blank" class="btn btn-sm">Abrir</a>
+            <button onclick="openWorkspace('http://100.120.34.14:8088', 'AdGuard Home')" class="btn btn-sm">Abrir</button>
           </div>
 
           <div class="service-card">
             <div class="svc-icon">🛡️</div>
             <div class="svc-info">
               <div class="svc-name">Nginx Proxy Manager</div>
-              <div class="svc-desc">Reverse Proxy y gestión SSL</div>
-              <div class="svc-port">Puertos: 80, 443, 81</div>
+              <div class="svc-desc">Reverse Proxy y certificados SSL</div>
+              <div class="svc-port">Admin: :81 | Proxy: :80, :443</div>
             </div>
-            <a href="http://100.120.34.14:81" target="_blank" class="btn btn-sm">Abrir</a>
+            <button onclick="openWorkspace('http://100.120.34.14:81', 'Nginx Proxy Manager')" class="btn btn-sm">Abrir</button>
           </div>
 
           <div class="service-card">
             <div class="svc-icon">🐳</div>
             <div class="svc-info">
               <div class="svc-name">Portainer CE</div>
-              <div class="svc-desc">Gestor de contenedores y stacks</div>
-              <div class="svc-port">Puerto: 9000</div>
+              <div class="svc-desc">Gestor visual de Docker y Stacks</div>
+              <div class="svc-port">Puerto: :9000</div>
             </div>
-            <a href="http://100.120.34.14:9000" target="_blank" class="btn btn-sm">Abrir</a>
+            <button onclick="openWorkspace('http://100.120.34.14:9000', 'Portainer CE')" class="btn btn-sm">Abrir</button>
           </div>
 
           <div class="service-card">
             <div class="svc-icon">📈</div>
             <div class="svc-info">
               <div class="svc-name">Uptime Kuma</div>
-              <div class="svc-desc">Monitoreo de SLAs y disponibilidad</div>
-              <div class="svc-port">Puerto: 3001</div>
+              <div class="svc-desc">Monitoreo de disponibilidad y SLAs</div>
+              <div class="svc-port">Puerto: :3001</div>
             </div>
-            <a href="http://100.120.34.14:3001" target="_blank" class="btn btn-sm">Abrir</a>
+            <button onclick="openWorkspace('http://100.120.34.14:3001', 'Uptime Kuma')" class="btn btn-sm">Abrir</button>
           </div>
 
           <div class="service-card">
@@ -401,46 +496,146 @@
             <div class="svc-info">
               <div class="svc-name">Vaultwarden</div>
               <div class="svc-desc">Bóveda de contraseñas Bitwarden</div>
-              <div class="svc-port">Puerto: 8080, 3012</div>
+              <div class="svc-port">Puertos: :8080, :3012</div>
             </div>
-            <a href="http://100.120.34.14:8080" target="_blank" class="btn btn-sm">Abrir</a>
+            <button onclick="openWorkspace('http://100.120.34.14:8080', 'Vaultwarden')" class="btn btn-sm">Abrir</button>
           </div>
 
           <div class="service-card">
             <div class="svc-icon">🔄</div>
             <div class="svc-info">
               <div class="svc-name">Watchtower</div>
-              <div class="svc-desc">Monitoreo diario de imágenes Docker</div>
-              <div class="svc-port">Modo: monitor-only</div>
+              <div class="svc-desc">Auditoría diaria de imágenes Docker</div>
+              <div class="svc-port">Modo: monitor-only (04:00 AM)</div>
             </div>
             <span class="status-badge green">Activo</span>
           </div>
         </div>
       </section>
 
-      <!-- VIEW 4: SERVICIOS CONSOLIDADOS -->
+      <!-- VIEW 5: MIS PROYECTOS & APLICACIONES (Dev Hub) -->
+      <section id="view-projects" class="content-view">
+        <div class="server-hero">
+          <div class="hero-left">
+            <div class="server-badge">Desarrollo Propio & Aplicaciones</div>
+            <h2 class="server-name">Catálogo de Proyectos Propios</h2>
+            <p class="server-specs">Aplicaciones web y móviles diseñadas para alojarse en la Raspberry Pi 24/7 sin gasto innecesario de energía.</p>
+          </div>
+          <div class="hero-right">
+            <button class="btn btn-primary" onclick="openModal('modal-new-project')">+ Registrar Proyecto</button>
+          </div>
+        </div>
+
+        <div class="projects-grid">
+          <!-- ReceApp Card -->
+          <div class="project-card">
+            <div class="proj-header">
+              <span class="proj-badge web">Web / Mobile</span>
+              <span class="status-badge green">En Desarrollo</span>
+            </div>
+            <h3 class="proj-name">ReceApp</h3>
+            <p class="proj-desc">Sistema integral de costeo de recetas, control de ingredientes y formulaciones de producción.</p>
+            <div class="proj-stack">
+              <span class="stack-tag">React</span>
+              <span class="stack-tag">TypeScript</span>
+              <span class="stack-tag">FastAPI</span>
+            </div>
+            <div class="proj-footer">
+              <span class="proj-host">💡 Alojable en Raspberry Pi</span>
+              <a href="/ReceApp" class="btn btn-sm">Ver Proyecto</a>
+            </div>
+          </div>
+
+          <!-- AppFinanzas Card -->
+          <div class="project-card">
+            <div class="proj-header">
+              <span class="proj-badge finance">Finanzas</span>
+              <span class="status-badge green">En Desarrollo</span>
+            </div>
+            <h3 class="proj-name">AppFinanzas</h3>
+            <p class="proj-desc">Gestión y control de presupuestos personales, flujo de caja, categorización de gastos e inversiones.</p>
+            <div class="proj-stack">
+              <span class="stack-tag">Python</span>
+              <span class="stack-tag">SQL</span>
+              <span class="stack-tag">Analytics</span>
+            </div>
+            <div class="proj-footer">
+              <span class="proj-host">💡 Alojable en Raspberry Pi</span>
+              <a href="/AppFinanzas" class="btn btn-sm">Ver Proyecto</a>
+            </div>
+          </div>
+
+          <!-- Terreno Store Card -->
+          <div class="project-card">
+            <div class="proj-header">
+              <span class="proj-badge store">E-Commerce</span>
+              <span class="status-badge purple">Planeado</span>
+            </div>
+            <h3 class="proj-name">Terreno Store</h3>
+            <p class="proj-desc">Catálogo digital, venta de productos, gestión de inventario y pedidos en línea.</p>
+            <div class="proj-stack">
+              <span class="stack-tag">Next.js</span>
+              <span class="stack-tag">PostgreSQL</span>
+              <span class="stack-tag">Docker</span>
+            </div>
+            <div class="proj-footer">
+              <span class="proj-host">💡 Alojable en Raspberry Pi</span>
+              <span class="btn btn-sm disabled">Próximamente</span>
+            </div>
+          </div>
+
+          <!-- Aplicacion Desk Linux Card -->
+          <div class="project-card">
+            <div class="proj-header">
+              <span class="proj-badge system">Desktop Tool</span>
+              <span class="status-badge blue">Herramienta</span>
+            </div>
+            <h3 class="proj-name">Aplicación Desk Linux</h3>
+            <p class="proj-desc">Herramientas de automatización, scripts de mantenimiento y utilidades nativas para Linux.</p>
+            <div class="proj-stack">
+              <span class="stack-tag">Bash</span>
+              <span class="stack-tag">Python</span>
+              <span class="stack-tag">Systemd</span>
+            </div>
+            <div class="proj-footer">
+              <span class="proj-host">🖥️ Linux Native</span>
+              <a href="/Aplicacion Desk Linux" class="btn btn-sm">Ver Proyecto</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 6: DIRECTORIO DE ACCESOS -->
       <section id="view-services" class="content-view">
-        <h3 class="section-title">Todos los Accesos de Infraestructura</h3>
+        <h3 class="section-title">Directorio Consolidado de Infraestructura</h3>
         <div class="endpoints-table-wrapper">
           <table class="instances-table">
             <thead>
               <tr>
                 <th>Servicio</th>
-                <th>Servidor Físico</th>
-                <th>IP Tailscale</th>
-                <th>IP Red Local</th>
+                <th>Servidor / Dispositivo</th>
+                <th>IP Tailscale (Remoto)</th>
+                <th>IP Red Local (LAN)</th>
                 <th>Puerto</th>
                 <th>Acceso</th>
               </tr>
             </thead>
             <tbody>
               <tr>
+                <td><strong>Router TP-Link Archer C50</strong></td>
+                <td>Router Físico</td>
+                <td>—</td>
+                <td>192.168.0.1</td>
+                <td>80 (HTTP)</td>
+                <td><button onclick="openWorkspace('http://192.168.0.1', 'Router TP-Link')" class="link-btn">Abrir Panel</button></td>
+              </tr>
+              <tr>
                 <td><strong>Consola Proxmox</strong></td>
                 <td>Proxmox (jj)</td>
                 <td>100.77.123.25</td>
                 <td>192.168.0.104</td>
                 <td>8006 (HTTPS)</td>
-                <td><a href="https://100.77.123.25:8006" target="_blank" class="link-btn">Ir al Panel</a></td>
+                <td><button onclick="openWorkspace('https://100.77.123.25:8006', 'Proxmox VE (jj)')" class="link-btn">Abrir Consola</button></td>
               </tr>
               <tr>
                 <td><strong>Coolify PaaS</strong></td>
@@ -451,28 +646,20 @@
                 <td><a href="http://100.120.169.85:8000" target="_blank" class="link-btn">Ir al Panel</a></td>
               </tr>
               <tr>
-                <td><strong>n8n Automatizaciones</strong></td>
-                <td>Proxmox (LXC 200)</td>
-                <td>100.120.169.85</td>
-                <td>192.168.0.112</td>
-                <td>5678</td>
-                <td><a href="http://100.120.169.85:5678" target="_blank" class="link-btn">Ir al Panel</a></td>
-              </tr>
-              <tr>
                 <td><strong>Portainer CE</strong></td>
                 <td>Raspberry Pi (NodeR)</td>
                 <td>100.120.34.14</td>
                 <td>192.168.0.200</td>
                 <td>9000</td>
-                <td><a href="http://100.120.34.14:9000" target="_blank" class="link-btn">Ir al Panel</a></td>
+                <td><button onclick="openWorkspace('http://100.120.34.14:9000', 'Portainer CE')" class="link-btn">Abrir Consola</button></td>
               </tr>
               <tr>
                 <td><strong>AdGuard Home</strong></td>
                 <td>Raspberry Pi (NodeR)</td>
                 <td>100.120.34.14</td>
                 <td>192.168.0.200</td>
-                <td>3000</td>
-                <td><a href="http://100.120.34.14:3000" target="_blank" class="link-btn">Ir al Panel</a></td>
+                <td>8088</td>
+                <td><button onclick="openWorkspace('http://100.120.34.14:8088', 'AdGuard Home')" class="link-btn">Abrir Panel</button></td>
               </tr>
               <tr>
                 <td><strong>Nginx Proxy Manager</strong></td>
@@ -480,7 +667,7 @@
                 <td>100.120.34.14</td>
                 <td>192.168.0.200</td>
                 <td>81</td>
-                <td><a href="http://100.120.34.14:81" target="_blank" class="link-btn">Ir al Panel</a></td>
+                <td><button onclick="openWorkspace('http://100.120.34.14:81', 'Nginx Proxy Manager')" class="link-btn">Abrir Panel</button></td>
               </tr>
               <tr>
                 <td><strong>Uptime Kuma</strong></td>
@@ -488,7 +675,7 @@
                 <td>100.120.34.14</td>
                 <td>192.168.0.200</td>
                 <td>3001</td>
-                <td><a href="http://100.120.34.14:3001" target="_blank" class="link-btn">Ir al Panel</a></td>
+                <td><button onclick="openWorkspace('http://100.120.34.14:3001', 'Uptime Kuma')" class="link-btn">Abrir Panel</button></td>
               </tr>
               <tr>
                 <td><strong>Vaultwarden</strong></td>
@@ -496,13 +683,37 @@
                 <td>100.120.34.14</td>
                 <td>192.168.0.200</td>
                 <td>8080</td>
-                <td><a href="http://100.120.34.14:8080" target="_blank" class="link-btn">Ir al Panel</a></td>
+                <td><button onclick="openWorkspace('http://100.120.34.14:8080', 'Vaultwarden')" class="link-btn">Abrir Bóveda</button></td>
               </tr>
             </tbody>
           </table>
         </div>
       </section>
     </main>
+  </div>
+
+  <!-- Integrated Workspace Viewer Modal (In-App Embedding) -->
+  <div id="modal-workspace" class="modal-backdrop">
+    <div class="workspace-modal-content">
+      <div class="workspace-header">
+        <div class="workspace-title-group">
+          <span class="workspace-dot"></span>
+          <h3 id="workspace-title" class="workspace-title">Consola Integrada</h3>
+          <span id="workspace-url-badge" class="workspace-badge"></span>
+        </div>
+        <div class="workspace-controls">
+          <button class="ws-btn" onclick="reloadWorkspaceFrame()" title="Recargar">🔄</button>
+          <a id="workspace-external-link" href="#" target="_blank" class="ws-btn" title="Abrir en pestaña nueva">↗️</a>
+          <button class="ws-btn close" onclick="closeModal('modal-workspace')" title="Cerrar">&times;</button>
+        </div>
+      </div>
+      <div class="workspace-frame-container">
+        <iframe id="workspace-iframe" src="" frameborder="0" allowfullscreen></iframe>
+        <div id="workspace-fallback-banner" class="workspace-fallback-banner">
+          <p>⚠️ <strong>Nota de Seguridad del Navegador:</strong> Si el servicio bloquea la incrustación directa debido a cabeceras de seguridad (<code>X-Frame-Options</code>), usá el botón <strong>↗️ Abrir en pestaña nueva</strong>.</p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Settings Modal -->
@@ -521,10 +732,42 @@
           <label>IP Tailscale Raspberry Pi (NodeR)</label>
           <input type="text" id="cfg-noder" value="http://100.120.34.14:9000">
         </div>
+        <div class="form-group">
+          <label>IP Router TP-Link Archer C50</label>
+          <input type="text" id="cfg-router" value="http://192.168.0.1">
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" onclick="closeModal('modal-settings')">Cerrar</button>
         <button class="btn btn-primary" onclick="saveSettings()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal New Project -->
+  <div id="modal-new-project" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Registrar Nuevo Proyecto</h3>
+        <button class="modal-close" onclick="closeModal('modal-new-project')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre de la Aplicación</label>
+          <input type="text" id="new-proj-name" placeholder="Ej: MiNuevaApp">
+        </div>
+        <div class="form-group">
+          <label>Descripción corta</label>
+          <input type="text" id="new-proj-desc" placeholder="Descripción breve">
+        </div>
+        <div class="form-group">
+          <label>Puerto / URL en Raspberry Pi</label>
+          <input type="text" id="new-proj-url" placeholder="http://100.120.34.14:5000">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal('modal-new-project')">Cancelar</button>
+        <button class="btn btn-primary" onclick="closeModal('modal-new-project')">Guardar</button>
       </div>
     </div>
   </div>

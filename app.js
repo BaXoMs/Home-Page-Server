@@ -1,12 +1,14 @@
 /**
  * Home-Page-Server · Control Center Logic & Router
- * Modular multi-view architecture, network telemetry & server state
+ * Modular multi-screen architecture, integrated workspace viewer & server state
  */
 
 // Default configuration endpoints
 const DEFAULT_CONFIG = {
   proxmox: 'https://100.77.123.25:8006',
   noder: 'http://100.120.34.14:9000',
+  router: 'http://192.168.0.1',
+  adguard: 'http://100.120.34.14:8088'
 };
 
 let config = { ...DEFAULT_CONFIG };
@@ -17,7 +19,7 @@ const trafficPoints = {
   up:   [12, 18, 14, 22, 28, 32, 20, 18]
 };
 
-// View metadata
+// View metadata for the 6 modular screens
 const viewTitles = {
   dashboard: {
     title: 'Tráfico & Resumen de Red',
@@ -27,13 +29,21 @@ const viewTitles = {
     title: 'Servidor Proxmox VE (jj)',
     subtitle: 'Hipervisor central, recursos de cómputo y estado de máquinas virtuales / LXCs'
   },
+  security: {
+    title: 'Red & Router TP-Link Archer C50',
+    subtitle: 'Gateway principal, conectividad física LAN/WiFi y escáner de seguridad'
+  },
   raspberry: {
     title: 'Raspberry Pi 4 (NodeR)',
-    subtitle: 'Nodo edge 24/7, contenedores Docker y servicios esenciales de red'
+    subtitle: 'Nodo edge 24/7 de bajo consumo, contenedores Docker y servicios de red'
+  },
+  projects: {
+    title: 'Mis Proyectos & Aplicaciones (Dev Hub)',
+    subtitle: 'Catálogo de aplicaciones propias listas para alojarse en la Raspberry Pi'
   },
   services: {
-    title: 'Directorio de Servicios Web',
-    subtitle: 'Accesos rápidos consolidados por Tailscale y Red Local'
+    title: 'Directorio de Accesos',
+    subtitle: 'Enlaces directos consolidados por Tailscale y Red Local'
   }
 };
 
@@ -105,20 +115,27 @@ function renderTrafficChart() {
   // Down
   const downLine = getBezierPath(trafficPoints.down, width, height, maxY, false);
   const downArea = getBezierPath(trafficPoints.down, width, height, maxY, true);
-  document.getElementById('path-down-line').setAttribute('d', downLine);
-  document.getElementById('path-down-area').setAttribute('d', downArea);
+  const pathDownLine = document.getElementById('path-down-line');
+  const pathDownArea = document.getElementById('path-down-area');
+  if (pathDownLine && pathDownArea) {
+    pathDownLine.setAttribute('d', downLine);
+    pathDownArea.setAttribute('d', downArea);
+  }
 
   // Up
   const upLine = getBezierPath(trafficPoints.up, width, height, maxY, false);
   const upArea = getBezierPath(trafficPoints.up, width, height, maxY, true);
-  document.getElementById('path-up-line').setAttribute('d', upLine);
-  document.getElementById('path-up-area').setAttribute('d', upArea);
+  const pathUpLine = document.getElementById('path-up-line');
+  const pathUpArea = document.getElementById('path-up-area');
+  if (pathUpLine && pathUpArea) {
+    pathUpLine.setAttribute('d', upLine);
+    pathUpArea.setAttribute('d', upArea);
+  }
 }
 
 // Subtle live traffic fluctuation
 function setupLiveTraffic() {
   setInterval(() => {
-    // Shift points
     const nextDown = Math.max(20, Math.min(90, trafficPoints.down[trafficPoints.down.length - 1] + (Math.random() * 16 - 8)));
     const nextUp   = Math.max(10, Math.min(45, trafficPoints.up[trafficPoints.up.length - 1] + (Math.random() * 8 - 4)));
 
@@ -130,7 +147,6 @@ function setupLiveTraffic() {
 
     renderTrafficChart();
 
-    // Update KPI indicators
     const speedDown = document.getElementById('speed-down');
     const speedUp = document.getElementById('speed-up');
     if (speedDown) speedDown.innerHTML = `${nextDown.toFixed(1)} <span class="unit">Mbps</span>`;
@@ -138,11 +154,23 @@ function setupLiveTraffic() {
   }, 4000);
 }
 
-// Refresh data handler
-window.refreshData = function() {
-  const btn = document.getElementById('btn-refresh');
-  btn.style.transform = 'rotate(180deg)';
-  setTimeout(() => { btn.style.transform = 'none'; }, 400);
+// Integrated Workspace Modal (In-App Embedding)
+window.openWorkspace = function(url, title) {
+  document.getElementById('workspace-title').innerText = title;
+  document.getElementById('workspace-url-badge').innerText = url;
+  document.getElementById('workspace-external-link').href = url;
+  
+  const iframe = document.getElementById('workspace-iframe');
+  iframe.src = url;
+
+  openModal('modal-workspace');
+};
+
+window.reloadWorkspaceFrame = function() {
+  const iframe = document.getElementById('workspace-iframe');
+  if (iframe) {
+    iframe.src = iframe.src;
+  }
 };
 
 // Modal controls
@@ -153,7 +181,20 @@ window.openModal = function(id) {
 
 window.closeModal = function(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.remove('active');
+  if (m) {
+    m.classList.remove('active');
+    if (id === 'modal-workspace') {
+      // Clear iframe on close to stop resource usage
+      const iframe = document.getElementById('workspace-iframe');
+      if (iframe) iframe.src = '';
+    }
+  }
+};
+
+window.refreshData = function() {
+  const btn = document.getElementById('btn-refresh');
+  btn.style.transform = 'rotate(180deg)';
+  setTimeout(() => { btn.style.transform = 'none'; }, 400);
 };
 
 function loadConfig() {
@@ -166,6 +207,9 @@ function loadConfig() {
 window.saveSettings = function() {
   config.proxmox = document.getElementById('cfg-proxmox').value.trim();
   config.noder = document.getElementById('cfg-noder').value.trim();
+  if (document.getElementById('cfg-router')) {
+    config.router = document.getElementById('cfg-router').value.trim();
+  }
   localStorage.setItem('homepage_server_config', JSON.stringify(config));
   closeModal('modal-settings');
 };
