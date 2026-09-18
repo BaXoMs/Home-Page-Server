@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <link rel="stylesheet" href="styles.css?v=2.3">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg>">
 </head>
 <body>
@@ -152,7 +152,7 @@
           <div class="kpi-card" onclick="switchView('raspberry')">
             <div class="kpi-header">
               <span class="kpi-label">Raspberry Pi (NodeR)</span>
-              <span class="status-badge green" id="rpi-status-badge">Online · ☀️ Día</span>
+              <span class="status-badge green" id="rpi-status-badge">Online (Diurno)</span>
             </div>
             <div class="kpi-value text-cyan" id="rpi-docker-count">6 Contenedores</div>
             <div class="kpi-meta" id="rpi-status-meta">Nodo 24/7 · Swap: 2 GB Activo</div>
@@ -362,17 +362,17 @@
               <span class="stat-value text-muted" id="pve-ram-value">-- GB / 16 GB</span>
             </div>
             <button id="pve-console-btn" onclick="openWorkspace('https://100.77.123.25:8006', 'Consola Proxmox VE (jj)')" class="btn btn-primary">
-              🖥️ Ver Consola Integrada
+              Ver Consola Integrada
             </button>
             <button id="pve-power-btn" onclick="openProxmoxPowerModal()" class="btn btn-danger-outline" title="Apagado seguro con auditoría de VMs y hardware">
-              🛑 Apagado Seguro
+              Apagado Seguro
             </button>
           </div>
         </div>
 
         <div id="pve-offline-banner" class="audit-item warning" style="display: none; margin-bottom: 20px; border-left: 4px solid var(--accent-cyan); padding: 14px 18px; border-radius: 8px; background: rgba(14, 22, 38, 0.85);">
-          <div style="font-weight: 700; color: #ffffff; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-            <span>💡</span> Modo Ahorro de Energía (~50W) · Hipervisor Apagado
+          <div style="font-weight: 700; color: #ffffff; margin-bottom: 4px;">
+            Modo Ahorro de Energía (~50W) · Hipervisor Apagado
           </div>
           <p style="color: #94a3b8; font-size: 0.84rem; margin: 0; line-height: 1.5;">
             El servidor físico <strong>Proxmox VE (jj)</strong> está desconectado para optimizar el consumo de energía. Todas las máquinas virtuales y contenedores LXC se encuentran detenidos de forma segura.
@@ -591,11 +591,13 @@
         <!-- Eco Sleep Mode & Night Schedule Banner (23:00 - 11:00) -->
         <div class="eco-sleep-banner" id="eco-sleep-banner">
           <div class="eco-banner-info">
-            <span class="eco-banner-icon" id="eco-banner-icon">☀️</span>
+            <span class="eco-banner-icon" id="eco-banner-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; stroke: var(--accent-cyan);"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            </span>
             <div>
               <div class="eco-banner-title">
-                <strong id="eco-banner-title-text">Modo Día Activo (Todos los servicios en línea)</strong>
-                <span class="status-badge blue" id="eco-badge">23:00 a 11:00 Automático</span>
+                <strong id="eco-banner-title-text">Modo Diurno Activo (Todos los servicios en línea)</strong>
+                <span class="status-badge blue" id="eco-badge">Ventana 23:00 a 11:00</span>
               </div>
               <p class="eco-banner-desc" id="eco-banner-desc">
                 A las 23:00 se pausan automáticamente los contenedores pesados (Portainer, Vaultwarden, Uptime) para ahorro de energía y CPU. A las 11:00 se reactivan. AdGuard DNS y la Home Page permanecen siempre activos 24/7.
@@ -603,7 +605,7 @@
             </div>
           </div>
           <button type="button" onclick="toggleEcoMode()" class="btn btn-sm btn-secondary" id="btn-toggle-eco">
-            🌙 Forzar Modo Noche Ahora
+            Forzar Modo Nocturno
           </button>
         </div>
 
@@ -1056,6 +1058,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.2"></script>
+  <script src="app.js?v=2.3"></script>
 </body>
 </html>

@@ -544,12 +544,12 @@ function applyPveState(isPveUp) {
   }
   if (pvePowerBtn) {
     if (!isPveUp) {
-      pvePowerBtn.innerText = '⚡ Servidor Apagado';
+      pvePowerBtn.innerText = 'Servidor Apagado';
       pvePowerBtn.disabled = true;
       pvePowerBtn.classList.remove('btn-danger-outline');
       pvePowerBtn.classList.add('btn-secondary');
     } else {
-      pvePowerBtn.innerText = '🛑 Apagado Seguro';
+      pvePowerBtn.innerText = 'Apagado Seguro';
       pvePowerBtn.disabled = false;
       pvePowerBtn.classList.add('btn-danger-outline');
       pvePowerBtn.classList.remove('btn-secondary');
@@ -604,11 +604,11 @@ function applyEcoState(eco) {
 
   if (rpiBadge) {
     rpiBadge.className = isNight ? 'status-badge blue' : 'status-badge green';
-    rpiBadge.innerText = isNight ? 'Eco Sleep · 🌙 Noche' : 'Online · ☀️ Día';
+    rpiBadge.innerText = isNight ? 'Eco Sleep (Noche)' : 'Online (Diurno)';
   }
   if (rpiMeta) {
     rpiMeta.innerText = isNight
-      ? 'Modo Ahorro Nocturno (23:00-11:00) · Swap Activo'
+      ? 'Modo Ahorro Nocturno (23:00 - 11:00) · Swap Activo'
       : 'Nodo 24/7 · Swap: 2 GB Activo';
   }
   if (rpiCount) {
@@ -621,15 +621,19 @@ function applyEcoState(eco) {
     if (isNight) ecoBanner.classList.add('night-mode');
     else ecoBanner.classList.remove('night-mode');
   }
-  if (ecoIcon) ecoIcon.innerText = isNight ? '🌙' : '☀️';
+  if (ecoIcon) {
+    ecoIcon.innerHTML = isNight
+      ? '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; stroke: var(--accent-purple);"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>'
+      : '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; stroke: var(--accent-cyan);"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+  }
   if (ecoTitle) {
     ecoTitle.innerText = isNight
-      ? `Modo Noche Activo (${eco.paused_count || 0} Contenedores en Eco Sleep)`
-      : 'Modo Día Activo (Todos los servicios en línea)';
+      ? `Modo Nocturno Activo (${eco.paused_count || 0} Contenedores en Eco Sleep)`
+      : 'Modo Diurno Activo (Servicios en línea)';
   }
   if (ecoBadge) {
     ecoBadge.className = isNight ? 'status-badge purple' : 'status-badge blue';
-    ecoBadge.innerText = isNight ? 'Ahorro de Energía (23:00 a 11:00)' : '23:00 a 11:00 Automático';
+    ecoBadge.innerText = isNight ? 'Ahorro de Energía (23:00 - 11:00)' : 'Ventana 23:00 a 11:00';
   }
   if (ecoDesc) {
     ecoDesc.innerText = isNight
@@ -637,7 +641,7 @@ function applyEcoState(eco) {
       : 'A las 23:00 se pausan automáticamente los contenedores pesados (Portainer, Vaultwarden, Uptime) para ahorro de energía y CPU. A las 11:00 se reactivan. AdGuard DNS y la Home Page permanecen siempre activos 24/7.';
   }
   if (ecoBtn) {
-    ecoBtn.innerText = isNight ? '☀️ Forzar Modo Día Ahora' : '🌙 Forzar Modo Noche Ahora';
+    ecoBtn.innerText = isNight ? 'Forzar Modo Diurno' : 'Forzar Modo Nocturno';
   }
 }
 
