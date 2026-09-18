@@ -926,16 +926,19 @@ window.executeRpiShutdown = async function() {
 
 window.toggleEcoMode = async function() {
   const btn = document.getElementById('btn-toggle-eco');
-  const originalText = btn ? btn.innerText : '';
   if (btn) {
     btn.disabled = true;
     btn.innerText = '⏳ Aplicando...';
   }
 
   try {
+    const token = await getPowerToken();
     const res = await fetch('/api/power/eco/toggle', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({})
     });
     const data = await res.json();
