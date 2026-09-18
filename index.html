@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=2.0">
+  <link rel="stylesheet" href="styles.css?v=2.2">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg>">
 </head>
 <body>
@@ -143,10 +143,10 @@
           <div class="kpi-card" id="kpi-card-proxmox" onclick="switchView('proxmox')">
             <div class="kpi-header">
               <span class="kpi-label">Servidor Proxmox (jj)</span>
-              <span class="status-badge green" id="pve-status-badge">Online</span>
+              <span class="status-badge gray" id="pve-status-badge">Comprobando...</span>
             </div>
-            <div class="kpi-value text-white" id="pve-active-vms">2 Activas</div>
-            <div class="kpi-meta" id="pve-active-meta">LXC 200 (Coolify) · VM 102 (OPNsense)</div>
+            <div class="kpi-value text-muted" id="pve-active-vms">--</div>
+            <div class="kpi-meta" id="pve-active-meta">Comprobando estado del hipervisor...</div>
           </div>
 
           <div class="kpi-card" onclick="switchView('raspberry')">
@@ -352,14 +352,14 @@
       <section id="view-proxmox" class="content-view">
         <div class="server-hero">
           <div class="hero-left">
-            <div class="server-badge" id="pve-hero-badge">Hipervisor Principal</div>
+            <div class="server-badge" id="pve-hero-badge">Hipervisor Principal · Comprobando...</div>
             <h2 class="server-name">Proxmox VE · jj</h2>
             <p class="server-specs">Intel Core i5-8400 (6 Cores @ 2.80GHz) · 16 GB RAM · Proxmox 9.2</p>
           </div>
           <div class="hero-right">
             <div class="stat-pill" id="pve-ram-pill">
               <span class="stat-label">RAM Libre</span>
-              <span class="stat-value text-green" id="pve-ram-value">12.0 GB / 16 GB</span>
+              <span class="stat-value text-muted" id="pve-ram-value">-- GB / 16 GB</span>
             </div>
             <button id="pve-console-btn" onclick="openWorkspace('https://100.77.123.25:8006', 'Consola Proxmox VE (jj)')" class="btn btn-primary">
               🖥️ Ver Consola Integrada
@@ -370,8 +370,17 @@
           </div>
         </div>
 
+        <div id="pve-offline-banner" class="audit-item warning" style="display: none; margin-bottom: 20px; border-left: 4px solid var(--accent-cyan); padding: 14px 18px; border-radius: 8px; background: rgba(14, 22, 38, 0.85);">
+          <div style="font-weight: 700; color: #ffffff; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+            <span>💡</span> Modo Ahorro de Energía (~50W) · Hipervisor Apagado
+          </div>
+          <p style="color: #94a3b8; font-size: 0.84rem; margin: 0; line-height: 1.5;">
+            El servidor físico <strong>Proxmox VE (jj)</strong> está desconectado para optimizar el consumo de energía. Todas las máquinas virtuales y contenedores LXC se encuentran detenidos de forma segura.
+          </p>
+        </div>
+
         <h3 class="section-title">Máquinas Virtuales & Contenedores LXC</h3>
-        <div class="instances-table-wrapper">
+        <div class="instances-table-wrapper" id="pve-instances-wrapper">
           <table class="instances-table">
             <thead>
               <tr>
@@ -386,21 +395,21 @@
               </tr>
             </thead>
             <tbody>
-              <tr class="row-active">
+              <tr class="row-active" id="pve-row-200">
                 <td><span class="badge-id">200</span></td>
                 <td><strong>coolify</strong></td>
                 <td>LXC</td>
-                <td><span class="status-badge green">Corriendo</span></td>
+                <td id="pve-status-cell-200"><span class="status-badge gray" id="pve-status-200">Comprobando...</span></td>
                 <td>2 Cores</td>
                 <td>4096 MB</td>
                 <td>40 GB</td>
                 <td>Coolify Dashboard, n8n, Postgres, Redis</td>
               </tr>
-              <tr class="row-active">
+              <tr class="row-active" id="pve-row-102">
                 <td><span class="badge-id">102</span></td>
                 <td><strong>opnsense-lab</strong></td>
                 <td>QEMU VM</td>
-                <td><span class="status-badge green">Corriendo</span></td>
+                <td id="pve-status-cell-102"><span class="status-badge gray" id="pve-status-102">Comprobando...</span></td>
                 <td>1 Core</td>
                 <td>512 MB</td>
                 <td>10 GB</td>
@@ -1047,6 +1056,6 @@
     </div>
   </div>
 
-  <script src="app.js?v=2.0"></script>
+  <script src="app.js?v=2.2"></script>
 </body>
 </html>

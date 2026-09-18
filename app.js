@@ -47,13 +47,13 @@ const viewTitles = {
   }
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
   loadConfig();
   renderTrafficChart();
   setupLiveTraffic();
   getPowerToken();
   pollServerHealth();
-  setInterval(pollServerHealth, 6000);
+  setInterval(pollServerHealth, 5000);
 
   // Close modals or drawer on Escape key
   document.addEventListener('keydown', (e) => {
@@ -66,7 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
       closeModal('modal-power-rpi');
     }
   });
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
 
 // Mobile Drawer Menu Controls
 window.toggleMobileMenu = function() {
@@ -470,127 +476,168 @@ window.closeModal = function(id) {
 // Poll real-time hardware & server health via Power Bridge
 async function pollServerHealth() {
   try {
-    const res = await fetch('/api/power/status');
-    if (!res.ok) return;
+    const res = await fetch('/api/power/status', { cache: 'no-store' });
+    if (!res.ok) {
+      applyPveState(false);
+      return;
+    }
     const data = await res.json();
     const isPveUp = !!data.proxmox_reachable;
 
-    // Overview Screen KPI
-    const pveBadge = document.getElementById('pve-status-badge');
-    const pveVms = document.getElementById('pve-active-vms');
-    const pveMeta = document.getElementById('pve-active-meta');
-    const pvePanelTag = document.getElementById('pve-panel-tag');
-    const pveLiveList = document.getElementById('pve-live-list');
-
-    if (pveBadge) {
-      pveBadge.className = isPveUp ? 'status-badge green' : 'status-badge red';
-      pveBadge.innerText = isPveUp ? 'Online' : 'Offline';
-    }
-    if (pveVms) {
-      pveVms.innerText = isPveUp ? '2 Activas' : 'Apagado';
-      pveVms.style.color = isPveUp ? '#ffffff' : '#94a3b8';
-    }
-    if (pveMeta) {
-      pveMeta.innerText = isPveUp 
-        ? 'LXC 200 (Coolify) · VM 102 (OPNsense)' 
-        : 'Servidor Proxmox desconectado (0 Activas)';
-    }
-    if (pvePanelTag) {
-      pvePanelTag.innerText = isPveUp
-        ? '2 Activas · 7 En Espera (On-Demand)'
-        : '0 Activas · Hipervisor Apagado';
-      pvePanelTag.style.color = isPveUp ? 'var(--accent-cyan)' : '#ef4444';
-    }
-    if (pveLiveList) {
-      pveLiveList.style.opacity = isPveUp ? '1' : '0.45';
-    }
-
-    // Proxmox Screen Hero
-    const pveHeroBadge = document.getElementById('pve-hero-badge');
-    const pveRamValue = document.getElementById('pve-ram-value');
-    const pvePowerBtn = document.getElementById('pve-power-btn');
-    const pveConsoleBtn = document.getElementById('pve-console-btn');
-
-    if (pveHeroBadge) {
-      pveHeroBadge.innerText = isPveUp ? 'Hipervisor Principal · ONLINE' : 'Hipervisor Principal · OFFLINE';
-      pveHeroBadge.style.color = isPveUp ? 'var(--accent-cyan)' : '#ef4444';
-    }
-    if (pveRamValue) {
-      pveRamValue.innerText = isPveUp ? '12.0 GB / 16 GB' : '0.0 GB (Apagado)';
-      pveRamValue.className = isPveUp ? 'stat-value text-green' : 'stat-value';
-      if (!isPveUp) pveRamValue.style.color = '#94a3b8';
-    }
-    if (pvePowerBtn) {
-      if (!isPveUp) {
-        pvePowerBtn.innerText = '⚡ Servidor Apagado';
-        pvePowerBtn.disabled = true;
-        pvePowerBtn.classList.remove('btn-danger-outline');
-        pvePowerBtn.classList.add('btn-secondary');
-      } else {
-        pvePowerBtn.innerText = '🛑 Apagado Seguro';
-        pvePowerBtn.disabled = false;
-        pvePowerBtn.classList.add('btn-danger-outline');
-        pvePowerBtn.classList.remove('btn-secondary');
-      }
-    }
-    if (pveConsoleBtn) {
-      pveConsoleBtn.disabled = !isPveUp;
-      pveConsoleBtn.style.opacity = isPveUp ? '1' : '0.5';
-    }
+    applyPveState(isPveUp);
 
     // Eco Mode Telemetry (Raspberry Pi Night Schedule 23:00 - 11:00)
     if (data.eco) {
-      const isNight = data.eco.mode === 'night';
-      const rpiBadge = document.getElementById('rpi-status-badge');
-      const rpiMeta = document.getElementById('rpi-status-meta');
-      const rpiCount = document.getElementById('rpi-docker-count');
-      const ecoBanner = document.getElementById('eco-sleep-banner');
-      const ecoIcon = document.getElementById('eco-banner-icon');
-      const ecoTitle = document.getElementById('eco-banner-title-text');
-      const ecoBadge = document.getElementById('eco-badge');
-      const ecoDesc = document.getElementById('eco-banner-desc');
-      const ecoBtn = document.getElementById('btn-toggle-eco');
-
-      if (rpiBadge) {
-        rpiBadge.className = isNight ? 'status-badge blue' : 'status-badge green';
-        rpiBadge.innerText = isNight ? 'Eco Sleep · 🌙 Noche' : 'Online · ☀️ Día';
-      }
-      if (rpiMeta) {
-        rpiMeta.innerText = isNight
-          ? 'Modo Ahorro Nocturno (23:00-11:00) · Swap Activo'
-          : 'Nodo 24/7 · Swap: 2 GB Activo';
-      }
-      if (rpiCount) {
-        const paused = data.eco.paused_count || 0;
-        rpiCount.innerText = isNight 
-          ? `3 Activos (${paused} Pausados)` 
-          : '6 Contenedores';
-      }
-      if (ecoBanner) {
-        if (isNight) ecoBanner.classList.add('night-mode');
-        else ecoBanner.classList.remove('night-mode');
-      }
-      if (ecoIcon) ecoIcon.innerText = isNight ? '🌙' : '☀️';
-      if (ecoTitle) {
-        ecoTitle.innerText = isNight
-          ? `Modo Noche Activo (${data.eco.paused_count || 0} Contenedores en Eco Sleep)`
-          : 'Modo Día Activo (Todos los servicios en línea)';
-      }
-      if (ecoBadge) {
-        ecoBadge.className = isNight ? 'status-badge purple' : 'status-badge blue';
-        ecoBadge.innerText = isNight ? 'Ahorro de Energía (23:00 a 11:00)' : '23:00 a 11:00 Automático';
-      }
-      if (ecoDesc) {
-        ecoDesc.innerText = isNight
-          ? 'Contenedores secundarios pausados (Vaultwarden, Portainer, Uptime-Kuma) liberando CPU. AdGuard DNS y la Home Page siguen respondiendo 24/7. A las 11:00 AM se reanudan automáticamente.'
-          : 'A las 23:00 se pausan automáticamente los contenedores pesados (Portainer, Vaultwarden, Uptime) para ahorro de energía y CPU. A las 11:00 se reactivan. AdGuard DNS y la Home Page permanecen siempre activos 24/7.';
-      }
-      if (ecoBtn) {
-        ecoBtn.innerText = isNight ? '☀️ Forzar Modo Día Ahora' : '🌙 Forzar Modo Noche Ahora';
-      }
+      applyEcoState(data.eco);
     }
   } catch (e) {
-    console.warn('[PowerStatus] Telemetry poll failed:', e);
+    console.warn('[PowerStatus] Telemetry poll failed, defaulting to offline state:', e);
+    applyPveState(false);
+  }
+}
+
+function applyPveState(isPveUp) {
+  // Overview Screen KPI
+  const pveBadge = document.getElementById('pve-status-badge');
+  const pveVms = document.getElementById('pve-active-vms');
+  const pveMeta = document.getElementById('pve-active-meta');
+  const pvePanelTag = document.getElementById('pve-panel-tag');
+  const pveLiveList = document.getElementById('pve-live-list');
+
+  if (pveBadge) {
+    pveBadge.className = isPveUp ? 'status-badge green' : 'status-badge red';
+    pveBadge.innerText = isPveUp ? 'Online' : 'Offline';
+  }
+  if (pveVms) {
+    pveVms.innerText = isPveUp ? '2 Activas' : 'Apagado';
+    pveVms.style.color = isPveUp ? '#ffffff' : '#94a3b8';
+  }
+  if (pveMeta) {
+    pveMeta.innerText = isPveUp 
+      ? 'LXC 200 (Coolify) · VM 102 (OPNsense)' 
+      : 'Servidor Proxmox desconectado (0 Activas)';
+  }
+  if (pvePanelTag) {
+    pvePanelTag.innerText = isPveUp
+      ? '2 Activas · 7 En Espera (On-Demand)'
+      : '0 Activas · Hipervisor Apagado';
+    pvePanelTag.style.color = isPveUp ? 'var(--accent-cyan)' : '#ef4444';
+  }
+  if (pveLiveList) {
+    pveLiveList.style.opacity = isPveUp ? '1' : '0.45';
+  }
+
+  // Proxmox Screen Hero
+  const pveHeroBadge = document.getElementById('pve-hero-badge');
+  const pveRamValue = document.getElementById('pve-ram-value');
+  const pvePowerBtn = document.getElementById('pve-power-btn');
+  const pveConsoleBtn = document.getElementById('pve-console-btn');
+
+  if (pveHeroBadge) {
+    pveHeroBadge.innerText = isPveUp ? 'Hipervisor Principal · ONLINE' : 'Hipervisor Principal · OFFLINE';
+    pveHeroBadge.style.color = isPveUp ? 'var(--accent-cyan)' : '#ef4444';
+  }
+  if (pveRamValue) {
+    pveRamValue.innerText = isPveUp ? '12.0 GB / 16 GB' : '0.0 GB (Apagado)';
+    pveRamValue.className = isPveUp ? 'stat-value text-green' : 'stat-value';
+    if (!isPveUp) pveRamValue.style.color = '#94a3b8';
+  }
+  if (pvePowerBtn) {
+    if (!isPveUp) {
+      pvePowerBtn.innerText = '⚡ Servidor Apagado';
+      pvePowerBtn.disabled = true;
+      pvePowerBtn.classList.remove('btn-danger-outline');
+      pvePowerBtn.classList.add('btn-secondary');
+    } else {
+      pvePowerBtn.innerText = '🛑 Apagado Seguro';
+      pvePowerBtn.disabled = false;
+      pvePowerBtn.classList.add('btn-danger-outline');
+      pvePowerBtn.classList.remove('btn-secondary');
+    }
+  }
+  if (pveConsoleBtn) {
+    pveConsoleBtn.disabled = !isPveUp;
+    pveConsoleBtn.style.opacity = isPveUp ? '1' : '0.5';
+  }
+
+  // Proxmox Screen VM Table & Eco Banner
+  const pveBanner = document.getElementById('pve-offline-banner');
+  const status200 = document.getElementById('pve-status-200');
+  const status102 = document.getElementById('pve-status-102');
+  const row200 = document.getElementById('pve-row-200');
+  const row102 = document.getElementById('pve-row-102');
+  const tableWrapper = document.getElementById('pve-instances-wrapper');
+
+  if (pveBanner) {
+    pveBanner.style.display = isPveUp ? 'none' : 'block';
+  }
+  if (status200) {
+    status200.className = isPveUp ? 'status-badge green' : 'status-badge gray';
+    status200.innerText = isPveUp ? 'Corriendo' : 'Apagada (Host Apagado)';
+  }
+  if (status102) {
+    status102.className = isPveUp ? 'status-badge green' : 'status-badge gray';
+    status102.innerText = isPveUp ? 'Corriendo' : 'Apagada (Host Apagado)';
+  }
+  if (row200) {
+    row200.classList.toggle('row-active', isPveUp);
+  }
+  if (row102) {
+    row102.classList.toggle('row-active', isPveUp);
+  }
+  if (tableWrapper) {
+    tableWrapper.style.opacity = isPveUp ? '1' : '0.75';
+  }
+}
+
+function applyEcoState(eco) {
+  const isNight = eco.mode === 'night';
+  const rpiBadge = document.getElementById('rpi-status-badge');
+  const rpiMeta = document.getElementById('rpi-status-meta');
+  const rpiCount = document.getElementById('rpi-docker-count');
+  const ecoBanner = document.getElementById('eco-sleep-banner');
+  const ecoIcon = document.getElementById('eco-banner-icon');
+  const ecoTitle = document.getElementById('eco-banner-title-text');
+  const ecoBadge = document.getElementById('eco-badge');
+  const ecoDesc = document.getElementById('eco-banner-desc');
+  const ecoBtn = document.getElementById('btn-toggle-eco');
+
+  if (rpiBadge) {
+    rpiBadge.className = isNight ? 'status-badge blue' : 'status-badge green';
+    rpiBadge.innerText = isNight ? 'Eco Sleep · 🌙 Noche' : 'Online · ☀️ Día';
+  }
+  if (rpiMeta) {
+    rpiMeta.innerText = isNight
+      ? 'Modo Ahorro Nocturno (23:00-11:00) · Swap Activo'
+      : 'Nodo 24/7 · Swap: 2 GB Activo';
+  }
+  if (rpiCount) {
+    const paused = eco.paused_count || 0;
+    rpiCount.innerText = isNight 
+      ? `3 Activos (${paused} Pausados)` 
+      : '6 Contenedores';
+  }
+  if (ecoBanner) {
+    if (isNight) ecoBanner.classList.add('night-mode');
+    else ecoBanner.classList.remove('night-mode');
+  }
+  if (ecoIcon) ecoIcon.innerText = isNight ? '🌙' : '☀️';
+  if (ecoTitle) {
+    ecoTitle.innerText = isNight
+      ? `Modo Noche Activo (${eco.paused_count || 0} Contenedores en Eco Sleep)`
+      : 'Modo Día Activo (Todos los servicios en línea)';
+  }
+  if (ecoBadge) {
+    ecoBadge.className = isNight ? 'status-badge purple' : 'status-badge blue';
+    ecoBadge.innerText = isNight ? 'Ahorro de Energía (23:00 a 11:00)' : '23:00 a 11:00 Automático';
+  }
+  if (ecoDesc) {
+    ecoDesc.innerText = isNight
+      ? 'Contenedores secundarios pausados (Vaultwarden, Portainer, Uptime-Kuma) liberando CPU. AdGuard DNS y la Home Page siguen respondiendo 24/7. A las 11:00 AM se reanudan automáticamente.'
+      : 'A las 23:00 se pausan automáticamente los contenedores pesados (Portainer, Vaultwarden, Uptime) para ahorro de energía y CPU. A las 11:00 se reactivan. AdGuard DNS y la Home Page permanecen siempre activos 24/7.';
+  }
+  if (ecoBtn) {
+    ecoBtn.innerText = isNight ? '☀️ Forzar Modo Día Ahora' : '🌙 Forzar Modo Noche Ahora';
   }
 }
 
