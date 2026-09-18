@@ -1185,7 +1185,12 @@ window.handleGatekeeperLogin = async function(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error('No se pudo conectar con el servicio de autenticación. Verificá si el servidor está en línea.');
+    }
     if (!res.ok) {
       throw new Error(data.error || 'Credenciales inválidas');
     }
@@ -1197,7 +1202,7 @@ window.handleGatekeeperLogin = async function(e) {
     passwordInput.value = '';
   } catch (err) {
     if (errorMsg) {
-      errorMsg.textContent = err.message;
+      errorMsg.textContent = err.message || 'Error de conexión con el servidor';
       errorMsg.style.display = 'block';
     }
   } finally {
