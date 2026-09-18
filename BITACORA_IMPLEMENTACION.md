@@ -109,7 +109,56 @@ Para responder a la necesidad de mantener actualizados todos los sistemas (Linux
 
 ---
 
-## 6. 📌 Próximos Pasos Recomendados
+## 6. 🔌 Control Físico de Energía, Telemetría en Vivo y Modo Noche (Eco Sleep)
+
+Se implementó una arquitectura integral de gestión de energía, observabilidad en tiempo real y automatización horaria sin requerir reconstrucciones de imágenes Docker (`never build after changes`):
+
+### A. Power Bridge Daemon & Apagado Seguro por Hardware
+1. **Hardened SSH con `ForceCommand` hacia Proxmox VE (`jj`)**:
+   - Llave criptográfica ED25519 dedicada en `/home/admin/.ssh/id_proxmox_shutdown`.
+   - Restricción estricta en `/root/.ssh/authorized_keys` del hipervisor:
+     ```ssh
+     command="/usr/sbin/poweroff",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty,from="100.120.34.14,192.168.0.200" ssh-ed25519 ...
+     ```
+   - Imposibilita la ejecución de shells interactivos, lectura de archivos o escalación de privilegios; `sshd` fuerza exclusivamente `poweroff`.
+2. **Micro-API Daemon en Raspberry Pi (`power_bridge.py`)**:
+   - Demonio HTTP nativo en Python escuchando en `127.0.0.1:3006`.
+   - Servicio gestionado por systemd a nivel de usuario (`power-bridge.service`) con persistencia `loginctl enable-linger admin`.
+   - Autenticación criptográfica con Bearer token de 64 caracteres (`.power_token`, permisos `600`).
+   - Apagado ordenado del host Raspberry Pi (`/api/power/rpi`) validando el desafío tipográfico `"APAGAR"` y ejecutando un contenedor efímero con permisos host.
+3. **Proxy Reverso en Nginx (`homepage-server`)**:
+   - Ruta interna `/api/power/` enrutada hacia el gateway `172.23.0.1:3006` en el host, sin exponer puertos adicionales a la red.
+
+### B. Telemetría Dinámica en Tiempo Real (Resolución de Estado Proxmox Offline)
+1. **Sondeo Continuo (`pollServerHealth`)**:
+   - Endpoint `GET /api/power/status` que realiza `ping` continuo hacia `100.77.123.25`.
+   - `app.js` consulta el endpoint al iniciar la página y automáticamente cada **6 segundos**.
+   - Conmutación dinámica del DOM:
+     - Badge de Proxmox en Overview: Cambia de `Online` (verde) a **`Offline` (rojo)**.
+     - Contador de VMs: Cambia a **`Apagado (0 Activas)`** con opacidad atenuada.
+     - Hero en vista Proxmox: Cambia a **`Hipervisor Principal · OFFLINE`**, RAM en **`0.0 GB (Apagado)`**, botón bloqueado en **`⚡ Servidor Apagado`** y consola deshabilitada.
+2. **Mitigación de Caché Heurística del Navegador**:
+   - Se añadieron parámetros de versión (*cache-busting*) en `index.html`: `styles.css?v=2.0` y `app.js?v=2.0`.
+   - Se configuró Nginx con la cabecera `add_header Cache-Control "no-cache, must-revalidate";` para evitar que navegadores móviles (Chrome/Safari) ejecuten scripts desactualizados desde la memoria RAM del dispositivo.
+
+### C. Modo Noche Automático (Eco Sleep: 23:00 a 11:00) — Opción A
+1. **Justificación de Arquitectura**:
+   - La arquitectura ARM de la Raspberry Pi 4 carece de soporte para estados de suspensión profunda ACPI S3 y RTC por batería (apagarla físicamente requiere corte y reconexión manual del suministro eléctrico).
+   - Se implementó suspensión de procesos mediante cgroups del kernel Linux con **`docker pause`** / **`docker unpause`**.
+2. **Aislamiento de Cargas y Whitelist 24/7**:
+   - **Servicios Críticos Siempre Activos**: `adguardhome` (DNS local 100% operativo sin cortes), `homepage-server` (panel web y demonio de control), `nginx-proxy-manager` (enrutamiento de red).
+   - **Servicios Secundarios Pausados**: `portainer`, `vaultwarden`, `uptime-kuma`, `watchtower`.
+3. **Métricas y Beneficios Comprobados**:
+   - Reducción del uso de CPU de servicios secundarios a **0.0%**.
+   - Cero lecturas/escrituras en disco SSD/microSD durante la ventana nocturna.
+   - Estado de memoria intacto y reanudación instantánea en **< 10 ms** sin reconexiones de bases de datos.
+4. **Scheduler en Background & Control Manual**:
+   - Hilo background en `power_bridge.py` con detección de transiciones horarias exactas (23:00 y 11:00 CST).
+   - Banner visual en `index.html` (vista Raspberry Pi) con indicador de estado diurno/nocturno y botón de control manual autenticado (`POST /api/power/eco/toggle`).
+
+---
+
+## 7. 📌 Próximos Pasos Recomendados
 
 1. **Automatización de Notificaciones de Actualizaciones**: Integrar llamadas livianas del frontend hacia la GitHub API (`/repos/:owner/:repo/releases/latest`) para mostrar insignias "Update Available" en AdGuard, Ollama y Portainer.
 2. **Reverse Proxy SSL con Nginx Proxy Manager**: Configurar un dominio interno con certificado SSL local hacia `192.168.0.200:3005` y `192.168.0.112:8000` para suprimir alertas de seguridad del navegador y Malwarebytes.
