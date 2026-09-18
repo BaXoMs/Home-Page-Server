@@ -49,6 +49,9 @@ const viewTitles = {
 
 function initApp() {
   loadConfig();
+  initDigitalClock();
+  initAmudCatalog();
+  checkAuthSession();
   renderTrafficChart();
   setupLiveTraffic();
   getPowerToken();
@@ -64,6 +67,7 @@ function initApp() {
       closeModal('modal-new-project');
       closeModal('modal-power-proxmox');
       closeModal('modal-power-rpi');
+      closeModal('modal-auth');
     }
   });
 }
@@ -497,6 +501,8 @@ async function pollServerHealth() {
 }
 
 function applyPveState(isPveUp) {
+  renderAmudCatalog(isPveUp);
+
   // Overview Screen KPI
   const pveBadge = document.getElementById('pve-status-badge');
   const pveVms = document.getElementById('pve-active-vms');
@@ -1003,3 +1009,453 @@ window.toggleEcoMode = async function() {
     }
   }
 };
+
+// =========================================================
+// AMUD DASHBOARD · DIGITAL CLOCK, CATALOG & AUTHENTICATION
+// =========================================================
+
+let currentAmudUser = 'BaXoMs';
+let currentAmudFilter = 'all';
+let lastKnownPveState = false;
+let activeSession = null;
+
+// Services definition (Clean, professional, zero emojis in badges/glyphs)
+const AMUD_SERVICES = [
+  {
+    id: 'pve',
+    name: 'Proxmox VE (jj)',
+    desc: 'Hipervisor KVM/LXC principal · 16GB RAM · GTX 1650S',
+    tag: 'Hipervisor',
+    host: 'proxmox',
+    categories: ['all', 'servers'],
+    url: 'https://100.77.123.25:8006',
+    glyph: 'PVE',
+    pingGood: '2 ms',
+    actionText: 'Consola PVE',
+    workspaceView: 'proxmox'
+  },
+  {
+    id: 'rpi',
+    name: 'Raspberry Pi 4 (NodeR)',
+    desc: 'Edge Server 24/7 · Docker Host · 4GB RAM · MicroSD + SSD',
+    tag: 'Servidor 24/7',
+    host: 'rpi',
+    categories: ['all', 'servers'],
+    url: 'http://100.120.34.14:9000',
+    glyph: 'RPI',
+    pingGood: '<1 ms',
+    actionText: 'Portainer',
+    workspaceView: 'raspberry'
+  },
+  {
+    id: 'router',
+    name: 'Router TP-Link Archer C50',
+    desc: 'Gateway Principal · Dual Band AC1200 · DHCP 192.168.0.1',
+    tag: 'Red / Gateway',
+    host: 'rpi',
+    categories: ['all', 'servers'],
+    url: 'http://192.168.0.1',
+    glyph: 'NET',
+    pingGood: '1 ms',
+    actionText: 'Admin Panel',
+    workspaceView: 'security'
+  },
+  {
+    id: 'adguard',
+    name: 'AdGuard Home',
+    desc: 'DNS Cifrado DoH/DoT · Bloqueo de Anuncios y Telemetría',
+    tag: 'DNS Shield',
+    host: 'rpi',
+    categories: ['all', 'docker'],
+    url: 'http://100.120.34.14:8088',
+    glyph: 'DNS',
+    pingGood: '<1 ms',
+    actionText: 'Panel DNS'
+  },
+  {
+    id: 'portainer',
+    name: 'Portainer CE',
+    desc: 'Gestor gráfico de contenedores Docker, stacks y volúmenes',
+    tag: 'Docker Manager',
+    host: 'rpi',
+    categories: ['all', 'docker'],
+    url: 'http://100.120.34.14:9000',
+    glyph: 'DOCK',
+    pingGood: '<1 ms',
+    actionText: 'Abrir Portainer'
+  },
+  {
+    id: 'npm',
+    name: 'Nginx Proxy Manager',
+    desc: 'Enrutador inverso, certificados SSL automáticos y dominios',
+    tag: 'Reverse Proxy',
+    host: 'rpi',
+    categories: ['all', 'docker'],
+    url: 'http://100.120.34.14:81',
+    glyph: 'NPM',
+    pingGood: '<1 ms',
+    actionText: 'Abrir NPM'
+  },
+  {
+    id: 'vaultwarden',
+    name: 'Vaultwarden',
+    desc: 'Bóveda de contraseñas Bitwarden autoalojada con cifrado E2E',
+    tag: 'Seguridad',
+    host: 'rpi',
+    categories: ['all', 'docker'],
+    url: 'http://100.120.34.14:8080',
+    glyph: 'VAULT',
+    pingGood: '<1 ms',
+    actionText: 'Abrir Bóveda'
+  },
+  {
+    id: 'uptime',
+    name: 'Uptime Kuma',
+    desc: 'Monitor de disponibilidad, latencia y alertas de caídas',
+    tag: 'Monitoreo',
+    host: 'rpi',
+    categories: ['all', 'docker'],
+    url: 'http://100.120.34.14:3001',
+    glyph: 'KUMA',
+    pingGood: '<1 ms',
+    actionText: 'Abrir Kuma'
+  },
+  {
+    id: 'homepage',
+    name: 'Home-Page-Server',
+    desc: 'Centro de control unificado, métricas y router de vistas',
+    tag: 'Control Center',
+    host: 'rpi',
+    categories: ['all', 'docker'],
+    url: 'http://100.120.34.14:3005',
+    glyph: 'HOME',
+    pingGood: '<1 ms',
+    actionText: 'Actual'
+  },
+  {
+    id: 'coolify',
+    name: 'Coolify PaaS (LXC 200)',
+    desc: 'Plataforma autoalojada tipo Heroku/Vercel sobre Proxmox',
+    tag: 'PaaS Despliegues',
+    host: 'proxmox',
+    categories: ['all', 'servers', 'projects'],
+    url: 'http://100.77.123.25:8000',
+    glyph: 'COOL',
+    pingGood: '2 ms',
+    actionText: 'Abrir Coolify'
+  },
+  {
+    id: 'opnsense',
+    name: 'OPNsense Firewall (VM 102)',
+    desc: 'Firewall perimetral virtualizado, IDS Suricata y VLANs',
+    tag: 'Firewall / IDS',
+    host: 'proxmox',
+    categories: ['all', 'servers'],
+    url: 'https://100.77.123.25:8443',
+    glyph: 'OPN',
+    pingGood: '2 ms',
+    actionText: 'WebGUI'
+  },
+  {
+    id: 'ollama',
+    name: 'Ollama + OpenWebUI (VM 101)',
+    desc: 'Servidor LLM acelerado por GPU GTX 1650S y chat privado',
+    tag: 'IA & LLMs',
+    host: 'proxmox',
+    categories: ['all', 'projects'],
+    url: 'http://100.77.123.25:3000',
+    glyph: 'LLM',
+    pingGood: '3 ms',
+    actionText: 'Abrir WebUI'
+  },
+  {
+    id: 'nessus',
+    name: 'Tenable Nessus Scanner',
+    desc: 'Auditoría continua de vulnerabilidades de red y CVEs',
+    tag: 'Ciberseguridad',
+    host: 'proxmox',
+    categories: ['all', 'projects'],
+    url: 'https://100.77.123.25:8834',
+    glyph: 'CVE',
+    pingGood: '2 ms',
+    actionText: 'Abrir Nessus'
+  },
+  {
+    id: 'devhub',
+    name: 'Dev Hub · Proyectos Locales',
+    desc: 'Catálogo de aplicaciones frontend y microservicios listos para desplegar',
+    tag: 'Desarrollo',
+    host: 'rpi',
+    categories: ['all', 'projects'],
+    url: '#',
+    glyph: 'DEV',
+    pingGood: '<1 ms',
+    actionText: 'Ver Proyectos',
+    workspaceView: 'projects'
+  }
+];
+
+function initDigitalClock() {
+  function updateClock() {
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = String(hours % 12 || 12).padStart(2, '0');
+
+    const clockEl = document.getElementById('amud-clock-digits');
+    const ampmEl = document.getElementById('amud-clock-ampm');
+    if (clockEl) clockEl.textContent = `${displayHours}:${minutes}`;
+    if (ampmEl) ampmEl.textContent = ampm;
+
+    // Greeting & Date
+    const greetingTimeEl = document.getElementById('amud-greeting-time');
+    const userGreetingEl = document.getElementById('amud-user-greeting');
+    const dateEl = document.getElementById('amud-current-date');
+
+    if (greetingTimeEl) {
+      if (hours >= 6 && hours < 12) {
+        greetingTimeEl.textContent = 'Buenos días';
+      } else if (hours >= 12 && hours < 20) {
+        greetingTimeEl.textContent = 'Buenas tardes';
+      } else {
+        greetingTimeEl.textContent = 'Buenas noches';
+      }
+    }
+    if (userGreetingEl) {
+      userGreetingEl.textContent = currentAmudUser;
+    }
+    if (dateEl) {
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const formattedDate = now.toLocaleDateString('es-ES', options);
+      dateEl.textContent = formattedDate.charAt(0).toUpperCase() + formattedDate.slice(1);
+    }
+  }
+
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+window.handleWebSearch = function(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById('amud-search-input');
+  const providerSelect = document.getElementById('search-provider');
+  const provider = providerSelect ? providerSelect.value : 'google';
+  if (!input) return;
+  const q = input.value.trim();
+  if (!q) return;
+
+  if (provider === 'local') {
+    renderAmudCatalog(lastKnownPveState, q);
+    return;
+  }
+
+  let url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+  if (provider === 'duckduckgo') {
+    url = `https://duckduckgo.com/?q=${encodeURIComponent(q)}`;
+  }
+  window.open(url, '_blank');
+};
+
+window.filterAmudCards = function(category) {
+  currentAmudFilter = category;
+  document.querySelectorAll('.amud-tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-cat') === category);
+  });
+  renderAmudCatalog(lastKnownPveState);
+};
+
+function initAmudCatalog() {
+  const searchInput = document.getElementById('amud-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value;
+      renderAmudCatalog(lastKnownPveState, q);
+    });
+  }
+  renderAmudCatalog(false);
+}
+
+function renderAmudCatalog(isPveUp, searchQuery) {
+  lastKnownPveState = !!isPveUp;
+  const grid = document.getElementById('amud-catalog-grid');
+  if (!grid) return;
+
+  const q = (searchQuery || '').toLowerCase().trim();
+
+  // Filter items
+  const filtered = AMUD_SERVICES.filter(item => {
+    const matchesCat = (currentAmudFilter === 'all') || item.categories.includes(currentAmudFilter);
+    if (!matchesCat) return false;
+    if (!q) return true;
+    return item.name.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q) || item.tag.toLowerCase().includes(q);
+  });
+
+  // Update tab counts
+  const tabCounts = {
+    all: AMUD_SERVICES.length,
+    servers: AMUD_SERVICES.filter(s => s.categories.includes('servers')).length,
+    docker: AMUD_SERVICES.filter(s => s.categories.includes('docker')).length,
+    projects: AMUD_SERVICES.filter(s => s.categories.includes('projects')).length
+  };
+  document.querySelectorAll('.amud-tab-btn').forEach(btn => {
+    const cat = btn.getAttribute('data-cat');
+    const countEl = btn.querySelector('.amud-tab-count');
+    if (countEl && tabCounts[cat] !== undefined) {
+      countEl.textContent = tabCounts[cat];
+    }
+  });
+
+  // Render cards
+  grid.innerHTML = filtered.map(item => {
+    const isOnline = item.host === 'proxmox' ? isPveUp : true;
+    const statusClass = isOnline ? 'running' : 'stopped';
+    const statusText = isOnline ? '● RUNNING' : '● APAGADO';
+    const pingText = isOnline ? item.pingGood : 'OFFLINE';
+
+    let actionBtnHtml = '';
+    if (!isOnline) {
+      actionBtnHtml = `<button class="btn-card-action disabled" disabled>Servidor Apagado</button>`;
+    } else if (item.workspaceView) {
+      actionBtnHtml = `<button class="btn-card-action primary" onclick="switchView('${item.workspaceView}')">${item.actionText}</button>`;
+    } else {
+      actionBtnHtml = `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="btn-card-action primary">${item.actionText} →</a>`;
+    }
+
+    return `
+      <div class="amud-card ${!isOnline ? 'amud-card-offline' : ''}">
+        <div class="amud-card-top">
+          <div class="amud-card-identity">
+            <span class="amud-card-glyph">${item.glyph}</span>
+            <div>
+              <div class="amud-card-title">${item.name}</div>
+              <span class="amud-card-tag">${item.tag}</span>
+            </div>
+          </div>
+          <span class="amud-status-pill ${statusClass}">
+            <span class="amud-status-dot"></span> ${statusText.replace('● ', '')}
+          </span>
+        </div>
+        <div class="amud-card-desc">${item.desc}</div>
+        <div class="amud-card-stats">
+          <div class="amud-stat-item">
+            <span>PING</span>
+            <strong class="${isOnline ? 'text-green' : 'text-muted'}">${pingText}</strong>
+          </div>
+          <div class="amud-stat-item">
+            <span>HOST</span>
+            <strong>${item.host === 'proxmox' ? 'Proxmox VE' : 'Raspberry Pi'}</strong>
+          </div>
+        </div>
+        <div class="amud-card-actions">
+          ${actionBtnHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// --- AUTHENTICATION STATE & HANDLERS ---
+async function checkAuthSession() {
+  try {
+    const res = await fetch('/api/power/auth/session', { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.authenticated) {
+        activeSession = data;
+        currentAmudUser = data.username || 'root';
+        updateAuthUI(true, data.username);
+        return;
+      }
+    }
+    updateAuthUI(false);
+  } catch (e) {
+    console.warn('[Auth] Session check failed:', e);
+    updateAuthUI(false);
+  }
+}
+
+function updateAuthUI(isLoggedIn, username) {
+  const triggerBtn = document.getElementById('btn-auth-trigger');
+  const greetingUser = document.getElementById('amud-user-greeting');
+  if (greetingUser) {
+    greetingUser.textContent = isLoggedIn ? username : 'BaXoMs';
+  }
+  if (triggerBtn) {
+    if (isLoggedIn) {
+      triggerBtn.textContent = `[→ Cerrar (${username})]`;
+      triggerBtn.classList.add('authenticated');
+    } else {
+      triggerBtn.textContent = '[→ Iniciar Sesión]';
+      triggerBtn.classList.remove('authenticated');
+    }
+  }
+}
+
+window.handleAuthClick = function() {
+  if (activeSession && activeSession.authenticated) {
+    if (confirm(`¿Deseás cerrar la sesión de ${activeSession.username}?`)) {
+      logout();
+    }
+  } else {
+    openModal('modal-auth');
+  }
+};
+
+window.handleLoginSubmit = async function(e) {
+  if (e) e.preventDefault();
+  const usernameInput = document.getElementById('auth-username');
+  const passwordInput = document.getElementById('auth-password');
+  const errorMsg = document.getElementById('auth-error-msg');
+  const submitBtn = document.getElementById('btn-auth-submit');
+
+  if (!usernameInput || !passwordInput) return;
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+
+  if (errorMsg) errorMsg.style.display = 'none';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verificando credenciales...';
+  }
+
+  try {
+    const res = await fetch('/api/power/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.error || 'Credenciales inválidas');
+    }
+
+    activeSession = data;
+    currentAmudUser = data.username || username;
+    updateAuthUI(true, currentAmudUser);
+    closeModal('modal-auth');
+    passwordInput.value = '';
+  } catch (err) {
+    if (errorMsg) {
+      errorMsg.textContent = 'Error de acceso: ' + err.message;
+      errorMsg.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Iniciar Sesión en el Dashboard';
+    }
+  }
+};
+
+window.logout = async function() {
+  try {
+    await fetch('/api/power/auth/logout', { method: 'POST' });
+  } catch (e) {
+    console.warn('[Auth] Logout request failed:', e);
+  }
+  activeSession = null;
+  currentAmudUser = 'BaXoMs';
+  updateAuthUI(false);
+};
+
