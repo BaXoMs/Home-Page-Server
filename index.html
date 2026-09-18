@@ -7,11 +7,47 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=3.0">
+  <link rel="stylesheet" href="styles.css?v=3.1">
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300f2fe'><path d='M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'/></svg>">
 </head>
 <body>
-  <div class="app-layout">
+  <!-- Gatekeeper Fullscreen Security Screen (BaXoMs Root System) -->
+  <div id="gatekeeper-screen" class="gatekeeper-container">
+    <div class="gatekeeper-card">
+      <div class="gatekeeper-header">
+        <div class="gatekeeper-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+        <h2 class="gatekeeper-title">Home-Page-Server</h2>
+        <p class="gatekeeper-sub">Centro de Control · Acceso Protegido</p>
+      </div>
+
+      <div id="gatekeeper-error-msg" class="gatekeeper-error" style="display: none;"></div>
+
+      <form id="gatekeeper-form" onsubmit="handleGatekeeperLogin(event)">
+        <div class="auth-form-group">
+          <label for="gatekeeper-username">Usuario</label>
+          <input type="text" id="gatekeeper-username" required autocomplete="username" placeholder="BaXoMs" value="BaXoMs" autofocus>
+        </div>
+        <div class="auth-form-group">
+          <label for="gatekeeper-password">Contraseña</label>
+          <input type="password" id="gatekeeper-password" required autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <button type="submit" id="btn-gatekeeper-submit" class="btn-gatekeeper-action">
+          Acceder al Servidor →
+        </button>
+      </form>
+
+      <div class="gatekeeper-footer">
+        <span>Autenticación obligatoria de administración.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="app-layout" id="app-layout" style="display: none;">
     <!-- Mobile Sidebar Backdrop Overlay -->
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeMobileMenu()"></div>
 
@@ -123,8 +159,17 @@
           <div class="live-pill" style="display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.25); border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: #22c55e;">
             <span class="live-indicator-dot"></span> LIVE
           </div>
-          <button class="btn-auth-top" id="btn-auth-trigger" onclick="handleAuthClick()">
-            [→ Iniciar Sesión]
+          <button class="btn-manage-users-top" id="btn-manage-users" style="display: none;" onclick="openModal('modal-user-management')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            Usuarios
+          </button>
+          <button class="btn-auth-top" id="btn-auth-trigger" onclick="handleLogoutClick()">
+            [→ Cerrar Sesión]
           </button>
           <button class="action-btn" id="btn-refresh" title="Actualizar datos" onclick="refreshData()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -198,6 +243,18 @@
             </div>
             <div class="kpi-value text-white" id="speed-up">18.6 <span class="unit">Mbps</span></div>
             <div class="kpi-meta">Tráfico saliente promedio</div>
+          </div>
+        </div>
+
+        <!-- Buscador de Servicios Locales (Entre Servidores y Tráfico en Tiempo Real) -->
+        <div class="local-search-section">
+          <div class="local-search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="local-services-search" class="local-search-input" placeholder="Buscar y filtrar servicios locales (AdGuard, Portainer, Coolify, OPNsense...)" oninput="handleLocalServiceSearch(this.value)">
+            <button type="button" class="search-clear-btn" id="btn-clear-search" onclick="clearLocalSearch()" title="Limpiar búsqueda" style="display: none;">&times;</button>
           </div>
         </div>
 
@@ -368,50 +425,6 @@
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Catálogo & Búsqueda Rápida de Servicios (Estilo Amud) -->
-        <div class="panel-card" style="margin-top: 24px; padding: 20px 24px;">
-          <div class="panel-header" style="padding: 0 0 16px 0; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
-            <div class="panel-title-group">
-              <h3 class="panel-title">Catálogo de Servicios & Búsqueda Rápida</h3>
-              <span class="panel-tag">Directorio interactivo de accesos directos</span>
-            </div>
-          </div>
-
-          <!-- Amud Style Web Search Bar -->
-          <div class="amud-search-container" style="margin-bottom: 16px;">
-            <form class="amud-search-box" onsubmit="handleWebSearch(event)">
-              <select class="amud-search-select" id="search-provider">
-                <option value="google">Google</option>
-                <option value="duckduckgo">DuckDuckGo</option>
-                <option value="local">Local</option>
-              </select>
-              <input type="text" id="amud-search-input" class="amud-search-input" placeholder="Buscar en la web o filtrar servicios locales...">
-              <button type="submit" class="btn btn-xs btn-primary" style="border-radius: 20px; padding: 6px 14px; background: #f97316; border-color: #f97316;">Buscar</button>
-            </form>
-          </div>
-
-          <!-- Amud Style Category Filter Tabs -->
-          <div class="amud-tabs-bar" id="amud-category-tabs">
-            <button type="button" class="amud-tab-btn active" data-cat="all" onclick="filterAmudCards('all')">
-              Todos <span class="amud-tab-count">14</span>
-            </button>
-            <button type="button" class="amud-tab-btn" data-cat="servers" onclick="filterAmudCards('servers')">
-              Infraestructura & VMs <span class="amud-tab-count">9</span>
-            </button>
-            <button type="button" class="amud-tab-btn" data-cat="docker" onclick="filterAmudCards('docker')">
-              Docker Pi 24/7 <span class="amud-tab-count">6</span>
-            </button>
-            <button type="button" class="amud-tab-btn" data-cat="projects" onclick="filterAmudCards('projects')">
-              Proyectos <span class="amud-tab-count">4</span>
-            </button>
-          </div>
-
-          <!-- Amud Style Services Catalog Grid -->
-          <div class="amud-services-grid" id="amud-catalog-grid">
-            <!-- Dynamically populated and filtered -->
           </div>
         </div>
       </section>
@@ -1126,37 +1139,53 @@
     </div>
   </div>
 
-  <!-- Modal de Autenticación de Servidor Principal -->
-  <div class="modal-overlay" id="modal-auth">
-    <div class="modal-content glass-surface" style="max-width: 440px;">
+  <!-- Modal de Gestión de Usuarios (Exclusivo BaXoMs Root) -->
+  <div class="modal-overlay" id="modal-user-management">
+    <div class="modal-content glass-surface" style="max-width: 520px;">
       <div class="modal-header">
-        <h3 class="modal-title">Acceso al Servidor Principal</h3>
-        <button class="modal-close" onclick="closeModal('modal-auth')">&times;</button>
+        <h3 class="modal-title">Gestión de Usuarios · BaXoMs (Root)</h3>
+        <button class="modal-close" onclick="closeModal('modal-user-management')">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="auth-notice">
-          Ingresá con las credenciales de administración (Proxmox VE <code>root@pam</code> o usuario del nodo principal) para desbloquear acciones de control.
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5;">
+          Como usuario <strong>Root (BaXoMs)</strong>, podés crear cuentas secundarias para operadores o visores sin conceder acceso a funciones de apagado o administración de usuarios.
+        </p>
+
+        <h4 style="font-size: 0.82rem; color: #ffffff; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Usuarios Registrados</h4>
+        <div id="users-list-container" class="users-list-table">
+          <!-- Dinámicamente poblado -->
         </div>
-        <div id="auth-error-msg" style="display: none; padding: 10px 14px; background: rgba(239, 68, 68, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; font-size: 0.8rem; color: #ef4444; margin-bottom: 14px;"></div>
-        <form id="form-login" onsubmit="handleLoginSubmit(event)">
-          <div class="auth-form-group">
-            <label for="auth-username">Usuario</label>
-            <input type="text" id="auth-username" required autocomplete="username" placeholder="root / baxoms / admin" value="root">
-          </div>
-          <div class="auth-form-group">
-            <label for="auth-password">Contraseña</label>
-            <input type="password" id="auth-password" required autocomplete="current-password" placeholder="••••••••">
-          </div>
-          <div style="margin-top: 20px;">
-            <button type="submit" class="btn btn-primary" id="btn-auth-submit" style="width: 100%; justify-content: center; padding: 12px; background: #f97316; border-color: #f97316;">
-              Iniciar Sesión en el Dashboard
+
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.08);">
+          <h4 style="font-size: 0.85rem; color: var(--accent-cyan); margin-bottom: 12px;">Crear Nuevo Usuario</h4>
+          <div id="user-create-error" style="display: none; padding: 8px 12px; background: rgba(239, 68, 68, 0.15); border-left: 3px solid #ef4444; border-radius: 6px; font-size: 0.78rem; color: #ef4444; margin-bottom: 12px;"></div>
+          <form id="form-create-user" onsubmit="handleCreateUser(event)">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+              <div class="auth-form-group" style="margin-bottom: 0;">
+                <label for="new-user-username">Nombre de Usuario</label>
+                <input type="text" id="new-user-username" required placeholder="operador1">
+              </div>
+              <div class="auth-form-group" style="margin-bottom: 0;">
+                <label for="new-user-role">Rol / Permisos</label>
+                <select id="new-user-role" class="settings-select" style="padding: 11px 12px; height: 44px;">
+                  <option value="operador">Operador (Acceso a Servicios)</option>
+                  <option value="visor">Visor (Solo Lectura)</option>
+                </select>
+              </div>
+            </div>
+            <div class="auth-form-group">
+              <label for="new-user-password">Contraseña</label>
+              <input type="password" id="new-user-password" required placeholder="••••••••">
+            </div>
+            <button type="submit" id="btn-create-user-submit" class="btn btn-primary" style="width: 100%; justify-content: center; background: #f97316; border-color: #f97316; margin-top: 6px;">
+              Crear Usuario
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="app.js?v=3.0"></script>
+  <script src="app.js?v=3.1"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Power Bridge Daemon for Home-Page-Server
-Hardware Power Management & Eco Sleep Scheduler
+Hardware Power Management, User Security Hierarchy & Eco Sleep Scheduler
 Runs on Raspberry Pi host (NodeR) on port 3006
 """
 import http.server
@@ -13,10 +13,15 @@ import threading
 import time
 import datetime
 import secrets
+import hashlib
+import urllib.request
+import urllib.parse
+import ssl
 
 PORT = 3006
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 TOKEN_FILE = os.path.join(BASE_DIR, ".power_token")
+USERS_DB_FILE = os.path.join(BASE_DIR, "users_db.json")
 
 # Critical containers that must NEVER be paused (DNS, Web Portal, Proxy)
 CRITICAL_ALWAYS_ON = {"homepage-server", "adguardhome", "nginx-proxy-manager"}
@@ -50,6 +55,61 @@ def get_or_create_token():
 AUTH_TOKEN = get_or_create_token()
 ACTIVE_SESSIONS = {}
 print(f"[PowerBridge] Server started. Token: {AUTH_TOKEN[:8]}... (saved in {TOKEN_FILE})")
+
+# ---------------------------------------------------------
+# User Hierarchy Database & Security
+# BaXoMs is the sole Root user; secondary users are Operadores/Visores
+# ---------------------------------------------------------
+
+def hash_pw(pw, salt=None):
+    if not salt:
+        salt = secrets.token_hex(8)
+    h = hashlib.sha256((pw + salt).encode("utf-8")).hexdigest()
+    return f"{salt}${h}"
+
+def verify_pw(pw, stored_hash):
+    if not stored_hash or "$" not in stored_hash:
+        return False
+    salt, expected = stored_hash.split("$", 1)
+    return hashlib.sha256((pw + salt).encode("utf-8")).hexdigest() == expected
+
+def load_users():
+    if os.path.exists(USERS_DB_FILE):
+        try:
+            with open(USERS_DB_FILE, "r") as f:
+                data = json.load(f)
+                if "baxoms" in data and data["baxoms"].get("role") == "root":
+                    return data
+        except Exception as e:
+            print(f"[UsersDB] Warning reading users_db.json: {e}")
+
+    # Initialize default: BaXoMs is the sole root user
+    users = {
+        "baxoms": {
+            "username": "BaXoMs",
+            "role": "root",
+            "password_hash": hash_pw("EmM29Sm26"),
+            "fallback_pw": "grace26",
+            "created_at": "2026-09-17 00:00"
+        }
+    }
+    save_users(users)
+    return users
+
+def save_users(users):
+    try:
+        with open(USERS_DB_FILE, "w") as f:
+            json.dump(users, f, indent=2)
+        os.chmod(USERS_DB_FILE, 0o600)
+    except Exception as e:
+        print(f"[UsersDB] Error saving users_db.json: {e}")
+
+# Initialize users DB at startup
+load_users()
+
+# ---------------------------------------------------------
+# Docker Container & Eco Sleep Management
+# ---------------------------------------------------------
 
 def get_running_containers():
     try:
@@ -142,6 +202,10 @@ def eco_scheduler_loop():
 # Start background Eco scheduler
 threading.Thread(target=eco_scheduler_loop, daemon=True).start()
 
+# ---------------------------------------------------------
+# HTTP API Request Handler
+# ---------------------------------------------------------
+
 class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
     def _send_json(self, status, payload):
         body = json.dumps(payload).encode("utf-8")
@@ -157,20 +221,26 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         self._send_json(200, {"ok": True})
 
-    def _verify_auth(self):
+    def _get_current_session(self):
         auth = self.headers.get("Authorization", "").strip()
         expected = f"Bearer {AUTH_TOKEN}"
         if auth == expected:
-            return True
+            return {"username": "BaXoMs", "role": "root"}
         token = auth.replace("Bearer ", "").strip()
         if token in ACTIVE_SESSIONS and ACTIVE_SESSIONS[token]["expires"] > time.time():
-            return True
-        return False
+            return ACTIVE_SESSIONS[token]
+        return None
+
+    def _verify_auth(self):
+        return self._get_current_session() is not None
+
+    def _verify_root(self):
+        sess = self._get_current_session()
+        return sess is not None and sess.get("role") == "root"
 
     def do_GET(self):
         path = self.path.split("?")[0].rstrip("/")
         if path in ("/api/power/status", "/status"):
-            # Ping Proxmox over Tailscale
             proxmox_up = False
             try:
                 res = subprocess.run(
@@ -196,16 +266,33 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                     "paused_count": len(get_paused_containers())
                 }
             })
+
         elif path in ("/api/power/auth/session", "/auth/session"):
-            auth = self.headers.get("Authorization", "").replace("Bearer ", "").strip()
-            if auth and auth in ACTIVE_SESSIONS and ACTIVE_SESSIONS[auth]["expires"] > time.time():
+            sess = self._get_current_session()
+            if sess:
                 self._send_json(200, {
                     "authenticated": True,
-                    "username": ACTIVE_SESSIONS[auth]["username"],
-                    "role": ACTIVE_SESSIONS[auth]["role"]
+                    "username": sess["username"],
+                    "role": sess["role"]
                 })
             else:
                 self._send_json(200, {"authenticated": False})
+
+        elif path in ("/api/power/users", "/users"):
+            if not self._verify_root():
+                self._send_json(403, {"error": "Acceso denegado: Solo BaXoMs (root) puede listar y administrar usuarios"})
+                return
+            users = load_users()
+            user_list = [
+                {
+                    "username": u["username"],
+                    "role": u["role"],
+                    "created_at": u.get("created_at", "")
+                }
+                for u in users.values()
+            ]
+            self._send_json(200, {"users": user_list})
+
         elif path in ("/api/power/eco/status", "/eco/status"):
             self._send_json(200, {
                 "auto_schedule": eco_state["auto_schedule"],
@@ -215,6 +302,7 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                 "paused_containers": list(get_paused_containers()),
                 "always_on": list(CRITICAL_ALWAYS_ON)
             })
+
         elif path in ("/api/power/token", "/token"):
             client_ip = self.client_address[0]
             if (client_ip in ("127.0.0.1", "localhost") or 
@@ -223,21 +311,26 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                 client_ip.startswith("192.168.")):
                 self._send_json(200, {"token": AUTH_TOKEN})
             else:
-                self._send_json(403, {"error": "Forbidden: Non-local client"})
+                self._send_json(403, {"error": "Token endpoint only available locally"})
+
         else:
             self._send_json(404, {"error": "Endpoint not found"})
 
     def do_POST(self):
         path = self.path.split("?")[0].rstrip("/")
-        content_len = int(self.headers.get('Content-Length', 0))
+        content_length = int(self.headers.get("Content-Length", 0))
         body_data = {}
-        if content_len > 0:
+        if content_length > 0:
             try:
-                body_data = json.loads(self.rfile.read(content_len).decode('utf-8'))
-            except Exception:
-                pass
+                body_raw = self.rfile.read(content_length)
+                body_data = json.loads(body_raw.decode("utf-8"))
+            except Exception as e:
+                self._send_json(400, {"error": f"Invalid JSON payload: {e}"})
+                return
 
-        # Public auth endpoint
+        # ---------------------------------------------------------
+        # Public Auth Login Endpoint
+        # ---------------------------------------------------------
         if path in ("/api/power/auth/login", "/auth/login"):
             username = body_data.get("username", "").strip()
             password = body_data.get("password", "").strip()
@@ -246,51 +339,65 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Usuario y contraseña requeridos"})
                 return
 
-            auth_valid = False
-            # 1. Try Proxmox VE API PAM authentication if reachable
-            try:
-                import urllib.request, urllib.parse, ssl
-                ctx = ssl.create_default_context()
-                ctx.check_hostname = False
-                ctx.verify_mode = ssl.CERT_NONE
-                login_payload = urllib.parse.urlencode({
-                    "username": f"{username}@pam",
-                    "password": password
-                }).encode("utf-8")
-                req = urllib.request.Request(
-                    "https://100.77.123.25:8006/api2/json/access/ticket",
-                    data=login_payload,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"}
-                )
-                with urllib.request.urlopen(req, timeout=3, context=ctx) as r:
-                    if r.status == 200:
-                        auth_valid = True
-            except Exception:
-                pass
+            # Explicit rule: no generic user 'root'. BaXoMs is the sole root user!
+            if username.lower() == "root":
+                self._send_json(403, {
+                    "error": "El usuario 'root' no está habilitado. BaXoMs es el único usuario root del sistema."
+                })
+                return
 
-            # 2. Local fallback verification for root / baxoms / admin
-            if not auth_valid:
-                if (username.lower() in ("root", "baxoms") and password in ("EmM29Sm26", "grace26")) or \
-                   (username.lower() == "admin" and password == "grace26"):
+            users = load_users()
+            user_key = username.lower()
+            user = users.get(user_key)
+            auth_valid = False
+
+            if user:
+                if verify_pw(password, user.get("password_hash")):
+                    auth_valid = True
+                elif user.get("fallback_pw") and password == user.get("fallback_pw"):
+                    auth_valid = True
+                elif user.get("role") == "root" and password in ("EmM29Sm26", "grace26"):
                     auth_valid = True
 
-            if auth_valid:
+            # If user is BaXoMs, also allow Proxmox VE PAM check if reachable
+            if not auth_valid and user_key == "baxoms":
+                try:
+                    ctx = ssl.create_default_context()
+                    ctx.check_hostname = False
+                    ctx.verify_mode = ssl.CERT_NONE
+                    login_payload = urllib.parse.urlencode({
+                        "username": "root@pam",
+                        "password": password
+                    }).encode("utf-8")
+                    req = urllib.request.Request(
+                        "https://100.77.123.25:8006/api2/json/access/ticket",
+                        data=login_payload,
+                        headers={"Content-Type": "application/x-www-form-urlencoded"}
+                    )
+                    with urllib.request.urlopen(req, timeout=3, context=ctx) as r:
+                        if r.status == 200:
+                            auth_valid = True
+                except Exception:
+                    pass
+
+            if auth_valid and user:
                 sess_token = secrets.token_hex(32)
+                role = user["role"]
                 ACTIVE_SESSIONS[sess_token] = {
-                    "username": username,
-                    "role": "admin",
+                    "username": user["username"],
+                    "role": role,
                     "created": time.time(),
                     "expires": time.time() + (86400 * 7)
                 }
                 self._send_json(200, {
                     "success": True,
                     "token": sess_token,
-                    "username": username,
-                    "role": "admin",
-                    "message": f"Sesión iniciada correctamente como {username}"
+                    "username": user["username"],
+                    "role": role,
+                    "message": f"Sesión iniciada correctamente como {user['username']}"
                 })
             else:
-                self._send_json(401, {"error": "Credenciales inválidas del servidor principal"})
+                self._send_json(401, {"error": "Credenciales inválidas"})
             return
 
         elif path in ("/api/power/auth/logout", "/auth/logout"):
@@ -300,12 +407,75 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
             self._send_json(200, {"success": True, "message": "Sesión cerrada correctamente"})
             return
 
-        if not self._verify_auth():
-            self._send_json(401, {"error": "Unauthorized: Invalid or missing Bearer token"})
+        # ---------------------------------------------------------
+        # User Management (Exclusive to BaXoMs Root)
+        # ---------------------------------------------------------
+        elif path in ("/api/power/users", "/users"):
+            if not self._verify_root():
+                self._send_json(403, {"error": "Acceso denegado: Solo BaXoMs (root) tiene permisos para crear usuarios"})
+                return
+
+            new_u = body_data.get("username", "").strip()
+            new_p = body_data.get("password", "").strip()
+            new_role = body_data.get("role", "operador").strip().lower()
+
+            if not new_u or not new_p:
+                self._send_json(400, {"error": "Nombre de usuario y contraseña requeridos"})
+                return
+
+            if new_u.lower() in ("root", "baxoms"):
+                self._send_json(400, {"error": "El usuario BaXoMs es exclusivo del sistema y no se puede duplicar"})
+                return
+
+            if new_role not in ("operador", "visor"):
+                self._send_json(400, {"error": "Rol inválido. Los roles permitidos son 'operador' o 'visor'"})
+                return
+
+            users = load_users()
+            users[new_u.lower()] = {
+                "username": new_u,
+                "role": new_role,
+                "password_hash": hash_pw(new_p),
+                "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+            }
+            save_users(users)
+            self._send_json(200, {
+                "success": True,
+                "message": f"Usuario '{new_u}' creado con éxito con rol de {new_role}"
+            })
+            return
+
+        elif path in ("/api/power/users/delete", "/users/delete"):
+            if not self._verify_root():
+                self._send_json(403, {"error": "Acceso denegado: Solo BaXoMs (root) tiene permisos para eliminar usuarios"})
+                return
+
+            target_u = body_data.get("username", "").strip().lower()
+            if target_u in ("baxoms", "root"):
+                self._send_json(400, {"error": "Operación prohibida: No se puede eliminar a BaXoMs (Root)"})
+                return
+
+            users = load_users()
+            if target_u in users:
+                deleted_name = users[target_u]["username"]
+                del users[target_u]
+                save_users(users)
+                self._send_json(200, {"success": True, "message": f"Usuario '{deleted_name}' eliminado correctamente"})
+            else:
+                self._send_json(404, {"error": "Usuario no encontrado"})
+            return
+
+        # ---------------------------------------------------------
+        # Hardware Power Control & Eco (Strictly BaXoMs Root Only)
+        # ---------------------------------------------------------
+        if not self._verify_root():
+            self._send_json(403, {
+                "error": "Acceso denegado: Solo BaXoMs (Root) tiene autorización para controlar energía y hardware"
+            })
             return
 
         if path in ("/api/power/proxmox", "/proxmox"):
-            print("[PowerBridge] INCOMING SHUTDOWN REQUEST FOR PROXMOX VE (jj)")
+            print("[PowerBridge] INCOMING SHUTDOWN REQUEST FOR PROXMOX VE (jj) BY BAXOMS ROOT")
             def dispatch_proxmox_shutdown():
                 time.sleep(1)
                 ssh_key = os.path.expanduser("~/.ssh/id_proxmox_shutdown")
@@ -319,7 +489,7 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                 ]
                 try:
                     res = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
-                    print(f"[PowerBridge] Proxmox SSH poweroff dispatched: code={res.returncode}, out={res.stdout}, err={res.stderr}")
+                    print(f"[PowerBridge] Proxmox SSH poweroff dispatched: code={res.returncode}")
                 except Exception as e:
                     print(f"[PowerBridge] Error triggering Proxmox shutdown: {e}")
 
@@ -336,7 +506,7 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "Desafío de seguridad incorrecto. Debes enviar 'APAGAR'."})
                 return
 
-            print("[PowerBridge] INCOMING SHUTDOWN REQUEST FOR RASPBERRY PI (NodeR)")
+            print("[PowerBridge] INCOMING SHUTDOWN REQUEST FOR RASPBERRY PI (NodeR) BY BAXOMS ROOT")
             def dispatch_rpi_shutdown():
                 time.sleep(3)
                 cmd = [
@@ -356,7 +526,6 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
             })
 
         elif path in ("/api/power/eco/toggle", "/eco/toggle"):
-            # Manually toggle between Night and Day mode
             target_mode = body_data.get("mode")
             if not target_mode:
                 target_mode = "night" if eco_state["current_mode"] == "day" else "day"
@@ -401,7 +570,7 @@ class ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 if __name__ == "__main__":
     server = ThreadedHTTPServer(("0.0.0.0", PORT), PowerBridgeHandler)
-    print(f"[PowerBridge] Listening on 0.0.0.0:{PORT} with Eco Scheduler (23:00 - 11:00)...")
+    print(f"[PowerBridge] Listening on 0.0.0.0:{PORT} with BaXoMs Root security & Eco Scheduler...")
     try:
         server.serve_forever()
     except KeyboardInterrupt:

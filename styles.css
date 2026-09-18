@@ -2509,3 +2509,273 @@ body {
   letter-spacing: 0.05em;
 }
 
+/* =========================================================
+   GATEKEEPER FULLSCREEN LOCK SCREEN (BAXOMS ROOT SECURITY)
+   ========================================================= */
+
+.gatekeeper-container {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: 
+    radial-gradient(circle at center, rgba(14, 22, 38, 0.7) 0%, rgba(6, 9, 17, 0.96) 100%),
+    url('bg-botanical.jpg') center/cover no-repeat;
+  padding: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.gatekeeper-card {
+  max-width: 420px;
+  width: 100%;
+  padding: 38px 32px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(14, 22, 38, 0.82);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+}
+
+.gatekeeper-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.gatekeeper-logo {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px auto;
+  border-radius: 16px;
+  background: rgba(249, 115, 22, 0.12);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f97316;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
+}
+
+.gatekeeper-logo svg {
+  width: 28px;
+  height: 28px;
+}
+
+.gatekeeper-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.gatekeeper-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.gatekeeper-error {
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.15);
+  border-left: 3px solid #ef4444;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: #ef4444;
+  margin-bottom: 18px;
+  line-height: 1.4;
+}
+
+.btn-gatekeeper-action {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  background: #f97316;
+  border: 1px solid #f97316;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-gatekeeper-action:hover {
+  background: #ea580c;
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.45);
+  transform: translateY(-1px);
+}
+
+.gatekeeper-footer {
+  text-align: center;
+  margin-top: 22px;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  letter-spacing: 0.03em;
+}
+
+/* =========================================================
+   LOCAL SERVICES SEARCH BAR (BETWEEN SERVERS & TRAFFIC)
+   ========================================================= */
+
+.local-search-section {
+  margin: 18px 0 22px 0;
+}
+
+.local-search-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: rgba(14, 22, 38, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 28px;
+  padding: 10px 18px;
+  transition: var(--transition);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.local-search-box:focus-within {
+  border-color: #f97316;
+  box-shadow: 0 0 16px rgba(249, 115, 22, 0.25);
+  background: rgba(14, 22, 38, 0.85);
+}
+
+.local-search-box .search-icon {
+  width: 18px;
+  height: 18px;
+  color: #f97316;
+  flex-shrink: 0;
+}
+
+.local-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.local-search-input::placeholder {
+  color: var(--text-dim);
+}
+
+.search-clear-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: var(--transition);
+}
+
+.search-clear-btn:hover {
+  color: #ffffff;
+}
+
+/* =========================================================
+   USERS MANAGEMENT MODAL (EXCLUSIVE BAXOMS ROOT)
+   ========================================================= */
+
+.users-list-table {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.user-row-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: rgba(6, 9, 17, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+.user-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-badge-role {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
+.user-badge-role.root {
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid rgba(249, 115, 22, 0.35);
+  color: #f97316;
+}
+
+.user-badge-role.operador {
+  background: rgba(0, 242, 254, 0.12);
+  border: 1px solid rgba(0, 242, 254, 0.3);
+  color: var(--accent-cyan);
+}
+
+.user-badge-role.visor {
+  background: rgba(148, 163, 184, 0.12);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  color: #94a3b8;
+}
+
+.btn-delete-user {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-delete-user:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-manage-users-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: rgba(0, 242, 254, 0.1);
+  border: 1px solid rgba(0, 242, 254, 0.25);
+  color: var(--accent-cyan);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-manage-users-top:hover {
+  background: var(--accent-cyan);
+  color: #060911;
+  box-shadow: 0 0 12px var(--accent-cyan-glow);
+}
+
+

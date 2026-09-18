@@ -47,16 +47,11 @@ const viewTitles = {
   }
 };
 
+let healthPollInterval = null;
+
 function initApp() {
   loadConfig();
-  initDigitalClock();
-  initAmudCatalog();
   checkAuthSession();
-  renderTrafficChart();
-  setupLiveTraffic();
-  getPowerToken();
-  pollServerHealth();
-  setInterval(pollServerHealth, 5000);
 
   // Close modals or drawer on Escape key
   document.addEventListener('keydown', (e) => {
@@ -67,7 +62,7 @@ function initApp() {
       closeModal('modal-new-project');
       closeModal('modal-power-proxmox');
       closeModal('modal-power-rpi');
-      closeModal('modal-auth');
+      closeModal('modal-user-management');
     }
   });
 }
@@ -461,7 +456,12 @@ window.openWorkspace = function(urlOrKey, title) {
 // Modal controls
 window.openModal = function(id) {
   const m = document.getElementById(id);
-  if (m) m.classList.add('active');
+  if (m) {
+    m.classList.add('active');
+    if (id === 'modal-user-management') {
+      loadUsersList();
+    }
+  }
 };
 
 window.closeModal = function(id) {
@@ -501,8 +501,6 @@ async function pollServerHealth() {
 }
 
 function applyPveState(isPveUp) {
-  renderAmudCatalog(isPveUp);
-
   // Overview Screen KPI
   const pveBadge = document.getElementById('pve-status-badge');
   const pveVms = document.getElementById('pve-active-vms');
@@ -1011,189 +1009,11 @@ window.toggleEcoMode = async function() {
 };
 
 // =========================================================
-// AMUD DASHBOARD · DIGITAL CLOCK, CATALOG & AUTHENTICATION
+// GATEKEEPER AUTHENTICATION, BAXOMS ROOT & LOCAL SEARCH
 // =========================================================
 
 let currentAmudUser = 'BaXoMs';
-let currentAmudFilter = 'all';
-let lastKnownPveState = false;
 let activeSession = null;
-
-// Services definition (Clean, professional, zero emojis in badges/glyphs)
-const AMUD_SERVICES = [
-  {
-    id: 'pve',
-    name: 'Proxmox VE (jj)',
-    desc: 'Hipervisor KVM/LXC principal · 16GB RAM · GTX 1650S',
-    tag: 'Hipervisor',
-    host: 'proxmox',
-    categories: ['all', 'servers'],
-    url: 'https://100.77.123.25:8006',
-    glyph: 'PVE',
-    pingGood: '2 ms',
-    actionText: 'Consola PVE',
-    workspaceView: 'proxmox'
-  },
-  {
-    id: 'rpi',
-    name: 'Raspberry Pi 4 (NodeR)',
-    desc: 'Edge Server 24/7 · Docker Host · 4GB RAM · MicroSD + SSD',
-    tag: 'Servidor 24/7',
-    host: 'rpi',
-    categories: ['all', 'servers'],
-    url: 'http://100.120.34.14:9000',
-    glyph: 'RPI',
-    pingGood: '<1 ms',
-    actionText: 'Portainer',
-    workspaceView: 'raspberry'
-  },
-  {
-    id: 'router',
-    name: 'Router TP-Link Archer C50',
-    desc: 'Gateway Principal · Dual Band AC1200 · DHCP 192.168.0.1',
-    tag: 'Red / Gateway',
-    host: 'rpi',
-    categories: ['all', 'servers'],
-    url: 'http://192.168.0.1',
-    glyph: 'NET',
-    pingGood: '1 ms',
-    actionText: 'Admin Panel',
-    workspaceView: 'security'
-  },
-  {
-    id: 'adguard',
-    name: 'AdGuard Home',
-    desc: 'DNS Cifrado DoH/DoT · Bloqueo de Anuncios y Telemetría',
-    tag: 'DNS Shield',
-    host: 'rpi',
-    categories: ['all', 'docker'],
-    url: 'http://100.120.34.14:8088',
-    glyph: 'DNS',
-    pingGood: '<1 ms',
-    actionText: 'Panel DNS'
-  },
-  {
-    id: 'portainer',
-    name: 'Portainer CE',
-    desc: 'Gestor gráfico de contenedores Docker, stacks y volúmenes',
-    tag: 'Docker Manager',
-    host: 'rpi',
-    categories: ['all', 'docker'],
-    url: 'http://100.120.34.14:9000',
-    glyph: 'DOCK',
-    pingGood: '<1 ms',
-    actionText: 'Abrir Portainer'
-  },
-  {
-    id: 'npm',
-    name: 'Nginx Proxy Manager',
-    desc: 'Enrutador inverso, certificados SSL automáticos y dominios',
-    tag: 'Reverse Proxy',
-    host: 'rpi',
-    categories: ['all', 'docker'],
-    url: 'http://100.120.34.14:81',
-    glyph: 'NPM',
-    pingGood: '<1 ms',
-    actionText: 'Abrir NPM'
-  },
-  {
-    id: 'vaultwarden',
-    name: 'Vaultwarden',
-    desc: 'Bóveda de contraseñas Bitwarden autoalojada con cifrado E2E',
-    tag: 'Seguridad',
-    host: 'rpi',
-    categories: ['all', 'docker'],
-    url: 'http://100.120.34.14:8080',
-    glyph: 'VAULT',
-    pingGood: '<1 ms',
-    actionText: 'Abrir Bóveda'
-  },
-  {
-    id: 'uptime',
-    name: 'Uptime Kuma',
-    desc: 'Monitor de disponibilidad, latencia y alertas de caídas',
-    tag: 'Monitoreo',
-    host: 'rpi',
-    categories: ['all', 'docker'],
-    url: 'http://100.120.34.14:3001',
-    glyph: 'KUMA',
-    pingGood: '<1 ms',
-    actionText: 'Abrir Kuma'
-  },
-  {
-    id: 'homepage',
-    name: 'Home-Page-Server',
-    desc: 'Centro de control unificado, métricas y router de vistas',
-    tag: 'Control Center',
-    host: 'rpi',
-    categories: ['all', 'docker'],
-    url: 'http://100.120.34.14:3005',
-    glyph: 'HOME',
-    pingGood: '<1 ms',
-    actionText: 'Actual'
-  },
-  {
-    id: 'coolify',
-    name: 'Coolify PaaS (LXC 200)',
-    desc: 'Plataforma autoalojada tipo Heroku/Vercel sobre Proxmox',
-    tag: 'PaaS Despliegues',
-    host: 'proxmox',
-    categories: ['all', 'servers', 'projects'],
-    url: 'http://100.77.123.25:8000',
-    glyph: 'COOL',
-    pingGood: '2 ms',
-    actionText: 'Abrir Coolify'
-  },
-  {
-    id: 'opnsense',
-    name: 'OPNsense Firewall (VM 102)',
-    desc: 'Firewall perimetral virtualizado, IDS Suricata y VLANs',
-    tag: 'Firewall / IDS',
-    host: 'proxmox',
-    categories: ['all', 'servers'],
-    url: 'https://100.77.123.25:8443',
-    glyph: 'OPN',
-    pingGood: '2 ms',
-    actionText: 'WebGUI'
-  },
-  {
-    id: 'ollama',
-    name: 'Ollama + OpenWebUI (VM 101)',
-    desc: 'Servidor LLM acelerado por GPU GTX 1650S y chat privado',
-    tag: 'IA & LLMs',
-    host: 'proxmox',
-    categories: ['all', 'projects'],
-    url: 'http://100.77.123.25:3000',
-    glyph: 'LLM',
-    pingGood: '3 ms',
-    actionText: 'Abrir WebUI'
-  },
-  {
-    id: 'nessus',
-    name: 'Tenable Nessus Scanner',
-    desc: 'Auditoría continua de vulnerabilidades de red y CVEs',
-    tag: 'Ciberseguridad',
-    host: 'proxmox',
-    categories: ['all', 'projects'],
-    url: 'https://100.77.123.25:8834',
-    glyph: 'CVE',
-    pingGood: '2 ms',
-    actionText: 'Abrir Nessus'
-  },
-  {
-    id: 'devhub',
-    name: 'Dev Hub · Proyectos Locales',
-    desc: 'Catálogo de aplicaciones frontend y microservicios listos para desplegar',
-    tag: 'Desarrollo',
-    host: 'rpi',
-    categories: ['all', 'projects'],
-    url: '#',
-    glyph: 'DEV',
-    pingGood: '<1 ms',
-    actionText: 'Ver Proyectos',
-    workspaceView: 'projects'
-  }
-];
 
 function initDigitalClock() {
   function updateClock() {
@@ -1236,178 +1056,118 @@ function initDigitalClock() {
   setInterval(updateClock, 1000);
 }
 
-window.handleWebSearch = function(e) {
-  if (e) e.preventDefault();
-  const input = document.getElementById('amud-search-input');
-  const providerSelect = document.getElementById('search-provider');
-  const provider = providerSelect ? providerSelect.value : 'google';
-  if (!input) return;
-  const q = input.value.trim();
-  if (!q) return;
+// ---------------------------------------------------------
+// Gatekeeper Session Checks & Dashboard Locking
+// ---------------------------------------------------------
 
-  if (provider === 'local') {
-    renderAmudCatalog(lastKnownPveState, q);
+async function checkAuthSession() {
+  const token = localStorage.getItem('hps_token');
+  if (!token) {
+    lockDashboard();
     return;
   }
 
-  let url = `https://www.google.com/search?q=${encodeURIComponent(q)}`;
-  if (provider === 'duckduckgo') {
-    url = `https://duckduckgo.com/?q=${encodeURIComponent(q)}`;
-  }
-  window.open(url, '_blank');
-};
-
-window.filterAmudCards = function(category) {
-  currentAmudFilter = category;
-  document.querySelectorAll('.amud-tab-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.getAttribute('data-cat') === category);
-  });
-  renderAmudCatalog(lastKnownPveState);
-};
-
-function initAmudCatalog() {
-  const searchInput = document.getElementById('amud-search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      const q = e.target.value;
-      renderAmudCatalog(lastKnownPveState, q);
-    });
-  }
-  renderAmudCatalog(false);
-}
-
-function renderAmudCatalog(isPveUp, searchQuery) {
-  lastKnownPveState = !!isPveUp;
-  const grid = document.getElementById('amud-catalog-grid');
-  if (!grid) return;
-
-  const q = (searchQuery || '').toLowerCase().trim();
-
-  // Filter items
-  const filtered = AMUD_SERVICES.filter(item => {
-    const matchesCat = (currentAmudFilter === 'all') || item.categories.includes(currentAmudFilter);
-    if (!matchesCat) return false;
-    if (!q) return true;
-    return item.name.toLowerCase().includes(q) || item.desc.toLowerCase().includes(q) || item.tag.toLowerCase().includes(q);
-  });
-
-  // Update tab counts
-  const tabCounts = {
-    all: AMUD_SERVICES.length,
-    servers: AMUD_SERVICES.filter(s => s.categories.includes('servers')).length,
-    docker: AMUD_SERVICES.filter(s => s.categories.includes('docker')).length,
-    projects: AMUD_SERVICES.filter(s => s.categories.includes('projects')).length
-  };
-  document.querySelectorAll('.amud-tab-btn').forEach(btn => {
-    const cat = btn.getAttribute('data-cat');
-    const countEl = btn.querySelector('.amud-tab-count');
-    if (countEl && tabCounts[cat] !== undefined) {
-      countEl.textContent = tabCounts[cat];
-    }
-  });
-
-  // Render cards
-  grid.innerHTML = filtered.map(item => {
-    const isOnline = item.host === 'proxmox' ? isPveUp : true;
-    const statusClass = isOnline ? 'running' : 'stopped';
-    const statusText = isOnline ? '● RUNNING' : '● APAGADO';
-    const pingText = isOnline ? item.pingGood : 'OFFLINE';
-
-    let actionBtnHtml = '';
-    if (!isOnline) {
-      actionBtnHtml = `<button class="btn-card-action disabled" disabled>Servidor Apagado</button>`;
-    } else if (item.workspaceView) {
-      actionBtnHtml = `<button class="btn-card-action primary" onclick="switchView('${item.workspaceView}')">${item.actionText}</button>`;
-    } else {
-      actionBtnHtml = `<a href="${item.url}" target="_blank" rel="noopener noreferrer" class="btn-card-action primary">${item.actionText} →</a>`;
-    }
-
-    return `
-      <div class="amud-card ${!isOnline ? 'amud-card-offline' : ''}">
-        <div class="amud-card-top">
-          <div class="amud-card-identity">
-            <span class="amud-card-glyph">${item.glyph}</span>
-            <div>
-              <div class="amud-card-title">${item.name}</div>
-              <span class="amud-card-tag">${item.tag}</span>
-            </div>
-          </div>
-          <span class="amud-status-pill ${statusClass}">
-            <span class="amud-status-dot"></span> ${statusText.replace('● ', '')}
-          </span>
-        </div>
-        <div class="amud-card-desc">${item.desc}</div>
-        <div class="amud-card-stats">
-          <div class="amud-stat-item">
-            <span>PING</span>
-            <strong class="${isOnline ? 'text-green' : 'text-muted'}">${pingText}</strong>
-          </div>
-          <div class="amud-stat-item">
-            <span>HOST</span>
-            <strong>${item.host === 'proxmox' ? 'Proxmox VE' : 'Raspberry Pi'}</strong>
-          </div>
-        </div>
-        <div class="amud-card-actions">
-          ${actionBtnHtml}
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-// --- AUTHENTICATION STATE & HANDLERS ---
-async function checkAuthSession() {
   try {
-    const res = await fetch('/api/power/auth/session', { cache: 'no-store' });
+    const res = await fetch('/api/power/auth/session', {
+      headers: { 'Authorization': `Bearer ${token}` },
+      cache: 'no-store'
+    });
     if (res.ok) {
       const data = await res.json();
       if (data.authenticated) {
-        activeSession = data;
-        currentAmudUser = data.username || 'root';
-        updateAuthUI(true, data.username);
+        unlockDashboard(data);
         return;
       }
     }
-    updateAuthUI(false);
+    lockDashboard();
   } catch (e) {
-    console.warn('[Auth] Session check failed:', e);
-    updateAuthUI(false);
+    console.warn('[Auth] Session check error, locking dashboard:', e);
+    lockDashboard();
   }
 }
 
-function updateAuthUI(isLoggedIn, username) {
-  const triggerBtn = document.getElementById('btn-auth-trigger');
+function lockDashboard() {
+  activeSession = null;
+  localStorage.removeItem('hps_token');
+  if (healthPollInterval) {
+    clearInterval(healthPollInterval);
+    healthPollInterval = null;
+  }
+
+  const gatekeeper = document.getElementById('gatekeeper-screen');
+  const appLayout = document.getElementById('app-layout');
+  if (gatekeeper) gatekeeper.style.display = 'flex';
+  if (appLayout) appLayout.style.display = 'none';
+
+  const userField = document.getElementById('gatekeeper-username');
+  if (userField && !userField.value) userField.value = 'BaXoMs';
+}
+
+function unlockDashboard(sessionData) {
+  activeSession = sessionData;
+  currentAmudUser = sessionData.username || 'BaXoMs';
+
+  const gatekeeper = document.getElementById('gatekeeper-screen');
+  const appLayout = document.getElementById('app-layout');
+  if (gatekeeper) gatekeeper.style.display = 'none';
+  if (appLayout) appLayout.style.display = 'flex';
+
+  // Update greeting and user
   const greetingUser = document.getElementById('amud-user-greeting');
   if (greetingUser) {
-    greetingUser.textContent = isLoggedIn ? username : 'BaXoMs';
+    greetingUser.textContent = currentAmudUser;
   }
+
+  // Manage Users button visible ONLY for BaXoMs (root)
+  const isRoot = (sessionData.role === 'root' || currentAmudUser.toLowerCase() === 'baxoms');
+  const btnManageUsers = document.getElementById('btn-manage-users');
+  if (btnManageUsers) {
+    btnManageUsers.style.display = isRoot ? 'inline-flex' : 'none';
+  }
+
+  // Topbar auth trigger
+  const triggerBtn = document.getElementById('btn-auth-trigger');
   if (triggerBtn) {
-    if (isLoggedIn) {
-      triggerBtn.textContent = `[→ Cerrar (${username})]`;
-      triggerBtn.classList.add('authenticated');
-    } else {
-      triggerBtn.textContent = '[→ Iniciar Sesión]';
-      triggerBtn.classList.remove('authenticated');
+    triggerBtn.textContent = `[→ Cerrar Sesión (${currentAmudUser})]`;
+    triggerBtn.classList.add('authenticated');
+  }
+
+  // Restrict hardware power buttons for non-root users
+  const pvePowerBtn = document.getElementById('pve-power-btn');
+  const rpiConfirmBtn = document.getElementById('btn-rpi-shutdown-confirm');
+  if (!isRoot) {
+    if (pvePowerBtn) {
+      pvePowerBtn.title = 'Acceso restringido: Solo BaXoMs (Root)';
+      pvePowerBtn.disabled = true;
+      pvePowerBtn.style.opacity = '0.5';
     }
+    if (rpiConfirmBtn) {
+      rpiConfirmBtn.title = 'Acceso restringido: Solo BaXoMs (Root)';
+      rpiConfirmBtn.disabled = true;
+    }
+  } else {
+    if (pvePowerBtn) {
+      pvePowerBtn.style.opacity = '1';
+    }
+  }
+
+  // Start telemetry, clock and charts
+  initDigitalClock();
+  renderTrafficChart();
+  setupLiveTraffic();
+  getPowerToken();
+  pollServerHealth();
+  if (!healthPollInterval) {
+    healthPollInterval = setInterval(pollServerHealth, 5000);
   }
 }
 
-window.handleAuthClick = function() {
-  if (activeSession && activeSession.authenticated) {
-    if (confirm(`¿Deseás cerrar la sesión de ${activeSession.username}?`)) {
-      logout();
-    }
-  } else {
-    openModal('modal-auth');
-  }
-};
-
-window.handleLoginSubmit = async function(e) {
+window.handleGatekeeperLogin = async function(e) {
   if (e) e.preventDefault();
-  const usernameInput = document.getElementById('auth-username');
-  const passwordInput = document.getElementById('auth-password');
-  const errorMsg = document.getElementById('auth-error-msg');
-  const submitBtn = document.getElementById('btn-auth-submit');
+  const usernameInput = document.getElementById('gatekeeper-username');
+  const passwordInput = document.getElementById('gatekeeper-password');
+  const errorMsg = document.getElementById('gatekeeper-error-msg');
+  const submitBtn = document.getElementById('btn-gatekeeper-submit');
 
   if (!usernameInput || !passwordInput) return;
   const username = usernameInput.value.trim();
@@ -1430,32 +1190,178 @@ window.handleLoginSubmit = async function(e) {
       throw new Error(data.error || 'Credenciales inválidas');
     }
 
-    activeSession = data;
-    currentAmudUser = data.username || username;
-    updateAuthUI(true, currentAmudUser);
-    closeModal('modal-auth');
+    if (data.token) {
+      localStorage.setItem('hps_token', data.token);
+    }
+    unlockDashboard(data);
     passwordInput.value = '';
   } catch (err) {
     if (errorMsg) {
-      errorMsg.textContent = 'Error de acceso: ' + err.message;
+      errorMsg.textContent = err.message;
       errorMsg.style.display = 'block';
     }
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Iniciar Sesión en el Dashboard';
+      submitBtn.textContent = 'Acceder al Servidor →';
     }
   }
 };
 
-window.logout = async function() {
-  try {
-    await fetch('/api/power/auth/logout', { method: 'POST' });
-  } catch (e) {
-    console.warn('[Auth] Logout request failed:', e);
+window.handleLogoutClick = async function() {
+  if (confirm(`¿Deseás cerrar la sesión de ${currentAmudUser}?`)) {
+    const token = localStorage.getItem('hps_token');
+    try {
+      if (token) {
+        await fetch('/api/power/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
+    } catch (e) {
+      console.warn('[Auth] Logout error:', e);
+    }
+    lockDashboard();
   }
-  activeSession = null;
-  currentAmudUser = 'BaXoMs';
-  updateAuthUI(false);
 };
+
+// ---------------------------------------------------------
+// Local Services Search (Between Servers and Real-Time Traffic)
+// ---------------------------------------------------------
+
+window.handleLocalServiceSearch = function(query) {
+  const q = (query || '').toLowerCase().trim();
+  const clearBtn = document.getElementById('btn-clear-search');
+  if (clearBtn) clearBtn.style.display = q ? 'block' : 'none';
+
+  // Filter items in overview-infra-grid (Proxmox VMs & RPi core services)
+  const items = document.querySelectorAll('.overview-infra-grid .vm-live-item');
+  items.forEach(item => {
+    if (!q) {
+      item.style.display = 'flex';
+      return;
+    }
+    const text = item.textContent.toLowerCase();
+    item.style.display = text.includes(q) ? 'flex' : 'none';
+  });
+};
+
+window.clearLocalSearch = function() {
+  const input = document.getElementById('local-services-search');
+  if (input) input.value = '';
+  handleLocalServiceSearch('');
+};
+
+// ---------------------------------------------------------
+// User Management Functions (Exclusive to BaXoMs Root)
+// ---------------------------------------------------------
+
+window.loadUsersList = async function() {
+  const container = document.getElementById('users-list-container');
+  if (!container) return;
+  container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.8rem; padding: 8px;">Cargando usuarios...</div>';
+
+  const token = localStorage.getItem('hps_token');
+  try {
+    const res = await fetch('/api/power/users', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al listar usuarios');
+
+    if (!data.users || data.users.length === 0) {
+      container.innerHTML = '<div style="color: var(--text-dim); font-size: 0.8rem; padding: 8px;">No hay usuarios registrados.</div>';
+      return;
+    }
+
+    container.innerHTML = data.users.map(u => {
+      const isBaXoMs = (u.username.toLowerCase() === 'baxoms' || u.role === 'root');
+      const deleteBtn = isBaXoMs 
+        ? '<span style="font-size: 0.72rem; color: #f97316; font-weight: 700; font-family: monospace;">ROOT MAESTRO</span>'
+        : `<button type="button" class="btn-delete-user" onclick="handleDeleteUser('${u.username}')">Eliminar</button>`;
+
+      return `
+        <div class="user-row-card">
+          <div class="user-identity">
+            <span class="user-badge-role ${u.role}">${u.role}</span>
+            <strong style="color: #ffffff; font-size: 0.85rem;">${u.username}</strong>
+            <span style="color: var(--text-dim); font-size: 0.75rem;">${u.created_at || ''}</span>
+          </div>
+          ${deleteBtn}
+        </div>
+      `;
+    }).join('');
+  } catch (err) {
+    container.innerHTML = `<div style="color: #ef4444; font-size: 0.8rem; padding: 8px;">${err.message}</div>`;
+  }
+};
+
+window.handleCreateUser = async function(e) {
+  if (e) e.preventDefault();
+  const usernameInput = document.getElementById('new-user-username');
+  const passwordInput = document.getElementById('new-user-password');
+  const roleSelect = document.getElementById('new-user-role');
+  const errorDiv = document.getElementById('user-create-error');
+  const submitBtn = document.getElementById('btn-create-user-submit');
+
+  if (!usernameInput || !passwordInput || !roleSelect) return;
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+  const role = roleSelect.value;
+
+  if (errorDiv) errorDiv.style.display = 'none';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Creando usuario...';
+  }
+
+  const token = localStorage.getItem('hps_token');
+  try {
+    const res = await fetch('/api/power/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ username, password, role })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al crear usuario');
+
+    usernameInput.value = '';
+    passwordInput.value = '';
+    loadUsersList();
+  } catch (err) {
+    if (errorDiv) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Crear Usuario';
+    }
+  }
+};
+
+window.handleDeleteUser = async function(username) {
+  if (!confirm(`¿Eliminar al usuario secundario '${username}'?`)) return;
+  const token = localStorage.getItem('hps_token');
+  try {
+    const res = await fetch('/api/power/users/delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ username })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al eliminar');
+    loadUsersList();
+  } catch (err) {
+    alert(err.message);
+  }
+};
+
 
