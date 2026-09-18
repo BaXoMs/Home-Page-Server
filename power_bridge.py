@@ -120,18 +120,20 @@ def is_night_hour():
 def eco_scheduler_loop():
     """Automatic background reconciliation loop for 23:00 - 11:00 Eco Sleep"""
     print("[PowerBridge-Eco] Scheduler thread initialized. Window: 23:00 to 11:00.")
+    last_enforced_window = None
     while True:
         try:
             if eco_state.get("auto_schedule", True):
-                should_be_night = is_night_hour()
-                current_mode = eco_state.get("current_mode", "day")
+                current_window = "night" if is_night_hour() else "day"
 
-                if should_be_night and current_mode != "night":
-                    print("[PowerBridge-Eco] 23:00 reached: Transitioning to Night Mode (Eco Sleep)...")
-                    apply_night_mode()
-                elif not should_be_night and current_mode != "day":
-                    print("[PowerBridge-Eco] 11:00 reached: Transitioning to Day Mode (Active)...")
-                    apply_day_mode()
+                if current_window != last_enforced_window:
+                    if current_window == "night":
+                        print("[PowerBridge-Eco] Window transition: Entering Night Mode (Eco Sleep 23:00-11:00)...")
+                        apply_night_mode()
+                    else:
+                        print("[PowerBridge-Eco] Window transition: Entering Day Mode (Active 11:00-23:00)...")
+                        apply_day_mode()
+                    last_enforced_window = current_window
         except Exception as e:
             print(f"[PowerBridge-Eco] Scheduler loop exception: {e}")
         time.sleep(30)
