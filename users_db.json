@@ -1,0 +1,10 @@
+{
+  "baxoms": {
+    "username": "BaXoMs",
+    "role": "root",
+    "password_hash": "2b29c720b25a3b81$cae0d494625581960359968df4b1c91e0d39b79e680d54f45ee8e9d5a01c6b9e",
+    "fallback_pw": "grace26",
+    "must_change_password": true,
+    "created_at": "2026-09-17 00:00"
+  }
+}

@@ -464,7 +464,11 @@ window.openModal = function(id) {
   }
 };
 
-window.closeModal = function(id) {
+window.closeModal = function(id, force = false) {
+  if (id === 'modal-force-change-password' && !force) {
+    // Prevent dismissing mandatory security modal
+    return;
+  }
   const m = document.getElementById(id);
   if (m) {
     m.classList.remove('active');
@@ -1118,18 +1122,36 @@ function unlockDashboard(sessionData) {
     greetingUser.textContent = currentAmudUser;
   }
 
-  // Manage Users button visible ONLY for BaXoMs (root)
+  // Header Profile Widget
   const isRoot = (sessionData.role === 'root' || currentAmudUser.toLowerCase() === 'baxoms');
-  const btnManageUsers = document.getElementById('btn-manage-users');
-  if (btnManageUsers) {
-    btnManageUsers.style.display = isRoot ? 'inline-flex' : 'none';
+  const headerUsername = document.getElementById('header-username');
+  const headerRole = document.getElementById('header-user-role');
+  const dropdownUserName = document.getElementById('dropdown-user-name');
+  const dropdownUserRole = document.getElementById('dropdown-user-role');
+  const dropdownManageUsers = document.getElementById('dropdown-manage-users');
+
+  if (headerUsername) headerUsername.textContent = currentAmudUser;
+  if (headerRole) {
+    headerRole.textContent = isRoot ? 'ROOT' : sessionData.role.toUpperCase();
+    headerRole.className = `user-role-badge ${isRoot ? 'root' : sessionData.role.toLowerCase()}`;
+  }
+  if (dropdownUserName) dropdownUserName.textContent = currentAmudUser;
+  if (dropdownUserRole) {
+    dropdownUserRole.textContent = isRoot ? 'Superusuario (Root)' : (sessionData.role === 'operador' ? 'Operador de Servicios' : 'Visor');
   }
 
-  // Topbar auth trigger
-  const triggerBtn = document.getElementById('btn-auth-trigger');
-  if (triggerBtn) {
-    triggerBtn.textContent = `[→ Cerrar Sesión (${currentAmudUser})]`;
-    triggerBtn.classList.add('authenticated');
+  // Manage Users in dropdown is strictly available only for BaXoMs (root)
+  if (dropdownManageUsers) {
+    dropdownManageUsers.style.display = isRoot ? 'flex' : 'none';
+  }
+
+  // If user has must_change_password flag, trigger mandatory password change modal
+  if (sessionData.must_change_password) {
+    const forceOldInput = document.getElementById('force-pwd-old');
+    if (forceOldInput && sessionData.last_pw_attempt) {
+      forceOldInput.value = sessionData.last_pw_attempt;
+    }
+    openModal('modal-force-change-password');
   }
 
   // Restrict hardware power buttons for non-root users
@@ -1198,6 +1220,7 @@ window.handleGatekeeperLogin = async function(e) {
     if (data.token) {
       localStorage.setItem('hps_token', data.token);
     }
+    data.last_pw_attempt = password;
     unlockDashboard(data);
     passwordInput.value = '';
   } catch (err) {
@@ -1209,6 +1232,124 @@ window.handleGatekeeperLogin = async function(e) {
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Acceder al Servidor →';
+    }
+  }
+};
+
+// ---------------------------------------------------------
+// Topbar User Dropdown & Profile Actions
+// ---------------------------------------------------------
+
+window.toggleUserDropdown = function(e) {
+  if (e) e.stopPropagation();
+  const dropdown = document.getElementById('user-dropdown');
+  if (dropdown) {
+    const isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+    dropdown.style.display = isHidden ? 'block' : 'none';
+  }
+};
+
+window.closeUserDropdown = function() {
+  const dropdown = document.getElementById('user-dropdown');
+  if (dropdown) dropdown.style.display = 'none';
+};
+
+document.addEventListener('click', function(e) {
+  const widget = document.getElementById('user-profile-widget');
+  if (widget && !widget.contains(e.target)) {
+    closeUserDropdown();
+  }
+});
+
+// ---------------------------------------------------------
+// Change Password Submission (Mandatory & Self-Service)
+// ---------------------------------------------------------
+
+window.handleSubmitChangePassword = async function(e, isForced) {
+  if (e) e.preventDefault();
+  const prefix = isForced ? 'force-pwd' : 'change-pwd';
+  const oldInput = document.getElementById(`${prefix}-old`);
+  const newInput = document.getElementById(`${prefix}-new`);
+  const confirmInput = document.getElementById(`${prefix}-confirm`);
+  const errorDiv = document.getElementById(`${prefix}-error`);
+  const successDiv = document.getElementById(`${prefix}-success`);
+  const submitBtn = document.getElementById(`btn-${prefix}-submit`);
+
+  if (!oldInput || !newInput || !confirmInput) return;
+  const old_password = oldInput.value.trim();
+  const new_password = newInput.value.trim();
+  const confirm_password = confirmInput.value.trim();
+
+  if (errorDiv) errorDiv.style.display = 'none';
+  if (successDiv) successDiv.style.display = 'none';
+
+  if (!old_password || !new_password || !confirm_password) {
+    if (errorDiv) {
+      errorDiv.textContent = 'Por favor completá todos los campos de contraseña.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+
+  if (new_password !== confirm_password) {
+    if (errorDiv) {
+      errorDiv.textContent = 'La nueva contraseña y su confirmación no coinciden.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+
+  if (new_password.length < 6) {
+    if (errorDiv) {
+      errorDiv.textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
+      errorDiv.style.display = 'block';
+    }
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Actualizando contraseña...';
+  }
+
+  const token = localStorage.getItem('hps_token');
+  try {
+    const res = await fetch('/api/power/auth/change-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ old_password, new_password, confirm_password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al actualizar contraseña');
+
+    oldInput.value = '';
+    newInput.value = '';
+    confirmInput.value = '';
+
+    if (isForced) {
+      closeModal('modal-force-change-password', true);
+      alert('¡Contraseña actualizada con éxito! Se eliminó el acceso por contraseña temporal.');
+    } else {
+      if (successDiv) {
+        successDiv.textContent = data.message || 'Contraseña actualizada correctamente.';
+        successDiv.style.display = 'block';
+      }
+      setTimeout(() => {
+        closeModal('modal-change-password', true);
+      }, 1500);
+    }
+  } catch (err) {
+    if (errorDiv) {
+      errorDiv.textContent = err.message;
+      errorDiv.style.display = 'block';
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = isForced ? 'Guardar Nueva Contraseña y Entrar →' : 'Actualizar Contraseña';
     }
   }
 };

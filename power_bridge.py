@@ -79,6 +79,9 @@ def load_users():
             with open(USERS_DB_FILE, "r") as f:
                 data = json.load(f)
                 if "baxoms" in data and data["baxoms"].get("role") == "root":
+                    # Ensure must_change_password flag is tracked
+                    if "must_change_password" not in data["baxoms"]:
+                        data["baxoms"]["must_change_password"] = bool(data["baxoms"].get("fallback_pw"))
                     return data
         except Exception as e:
             print(f"[UsersDB] Warning reading users_db.json: {e}")
@@ -90,6 +93,7 @@ def load_users():
             "role": "root",
             "password_hash": hash_pw("EmM29Sm26"),
             "fallback_pw": "grace26",
+            "must_change_password": True,
             "created_at": "2026-09-17 00:00"
         }
     }
@@ -354,9 +358,7 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
             if user:
                 if verify_pw(password, user.get("password_hash")):
                     auth_valid = True
-                elif user.get("fallback_pw") and password == user.get("fallback_pw"):
-                    auth_valid = True
-                elif user.get("role") == "root" and password in ("EmM29Sm26", "grace26"):
+                elif user.get("fallback_pw") and password in (user.get("fallback_pw"), "EmM29Sm26", "grace26"):
                     auth_valid = True
 
             # If user is BaXoMs, also allow Proxmox VE PAM check if reachable
@@ -389,11 +391,13 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                     "created": time.time(),
                     "expires": time.time() + (86400 * 7)
                 }
+                must_change = user.get("must_change_password", False) or bool(user.get("fallback_pw"))
                 self._send_json(200, {
                     "success": True,
                     "token": sess_token,
                     "username": user["username"],
                     "role": role,
+                    "must_change_password": must_change,
                     "message": f"Sesión iniciada correctamente como {user['username']}"
                 })
             else:
@@ -405,6 +409,70 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
             if auth in ACTIVE_SESSIONS:
                 del ACTIVE_SESSIONS[auth]
             self._send_json(200, {"success": True, "message": "Sesión cerrada correctamente"})
+            return
+
+        # ---------------------------------------------------------
+        # Change Password Endpoint (Mandatory & Self-Service)
+        # ---------------------------------------------------------
+        elif path in ("/api/power/auth/change-password", "/auth/change-password"):
+            sess = self._get_current_session()
+            if not sess:
+                self._send_json(401, {"error": "Sesión no autenticada"})
+                return
+
+            current_u_key = sess["username"].lower()
+            old_p = body_data.get("old_password", "").strip()
+            new_p = body_data.get("new_password", "").strip()
+            confirm_p = body_data.get("confirm_password", "").strip()
+
+            if not old_p or not new_p:
+                self._send_json(400, {"error": "Debés ingresar la contraseña actual y la nueva contraseña"})
+                return
+
+            if new_p != confirm_p:
+                self._send_json(400, {"error": "La nueva contraseña y su confirmación no coinciden"})
+                return
+
+            if len(new_p) < 6:
+                self._send_json(400, {"error": "La nueva contraseña debe contener al menos 6 caracteres"})
+                return
+
+            users = load_users()
+            user = users.get(current_u_key)
+            if not user:
+                self._send_json(404, {"error": "Usuario no encontrado"})
+                return
+
+            # Verify old password
+            old_valid = False
+            if verify_pw(old_p, user.get("password_hash")):
+                old_valid = True
+            elif user.get("fallback_pw") and old_p == user.get("fallback_pw"):
+                old_valid = True
+            elif user.get("role") == "root" and old_p in ("EmM29Sm26", "grace26"):
+                old_valid = True
+
+            if not old_valid:
+                self._send_json(400, {"error": "La contraseña actual ingresada es incorrecta"})
+                return
+
+            if new_p in ("grace26", "EmM29Sm26", old_p):
+                self._send_json(400, {"error": "La nueva contraseña no puede ser igual a una contraseña anterior o por defecto"})
+                return
+
+            # Update password hash, wipe fallback_pw, and clear must_change_password
+            user["password_hash"] = hash_pw(new_p)
+            if "fallback_pw" in user:
+                del user["fallback_pw"]
+            user["must_change_password"] = False
+            user["updated_at"] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+            save_users(users)
+            print(f"[UsersDB] Password successfully updated for user {user['username']}. Fallback removed.")
+            self._send_json(200, {
+                "success": True,
+                "message": "Contraseña actualizada exitosamente. Ya podés acceder a todas las funciones."
+            })
             return
 
         # ---------------------------------------------------------
@@ -436,6 +504,7 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
                 "username": new_u,
                 "role": new_role,
                 "password_hash": hash_pw(new_p),
+                "must_change_password": True,
                 "created_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
             }
             save_users(users)
