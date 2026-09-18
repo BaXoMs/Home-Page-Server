@@ -535,6 +535,93 @@ class PowerBridgeHandler(http.server.BaseHTTPRequestHandler):
             return
 
         # ---------------------------------------------------------
+        # Proxmox VM & Container Power Controls (Start / Stop)
+        # ---------------------------------------------------------
+        elif path in ("/api/power/vm/start", "/vm/start"):
+            sess = self._get_current_session()
+            if not sess or sess.get("role") not in ("root", "operador"):
+                self._send_json(403, {"error": "Permisos insuficientes: Solo BaXoMs u Operadores pueden encender VMs"})
+                return
+
+            vmid = body_data.get("vmid")
+            vm_type = body_data.get("type", "qemu").lower()
+            if not vmid:
+                self._send_json(400, {"error": "Parámetro 'vmid' requerido"})
+                return
+
+            # Check if Proxmox host is reachable
+            res_ping = subprocess.run(["ping", "-c", "1", "-W", "2", "100.77.123.25"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if res_ping.returncode != 0:
+                self._send_json(400, {
+                    "error": "El servidor Proxmox VE (jj) está apagado o fuera de línea. Primero encendé el hipervisor."
+                })
+                return
+
+            ssh_key = os.path.expanduser("~/.ssh/id_proxmox_shutdown")
+            subcmd = f"pct start {vmid}" if vm_type == "lxc" else f"qm start {vmid}"
+            cmd = [
+                "ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=8",
+                "-o", "BatchMode=yes", "-i", ssh_key, "root@100.77.123.25", subcmd
+            ]
+            try:
+                p = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+                if p.returncode == 0:
+                    self._send_json(200, {
+                        "success": True,
+                        "vmid": vmid,
+                        "message": f"Orden de encendido enviada exitosamente a VM/LXC {vmid}"
+                    })
+                else:
+                    self._send_json(500, {
+                        "error": f"Error ejecutando '{subcmd}' en Proxmox: {p.stderr.strip() or p.stdout.strip()}"
+                    })
+            except Exception as e:
+                self._send_json(500, {"error": f"Error de comunicación SSH con Proxmox: {e}"})
+            return
+
+        elif path in ("/api/power/vm/stop", "/vm/stop"):
+            sess = self._get_current_session()
+            if not sess or sess.get("role") not in ("root", "operador"):
+                self._send_json(403, {"error": "Permisos insuficientes: Solo BaXoMs u Operadores pueden apagar VMs"})
+                return
+
+            vmid = body_data.get("vmid")
+            vm_type = body_data.get("type", "qemu").lower()
+            if not vmid:
+                self._send_json(400, {"error": "Parámetro 'vmid' requerido"})
+                return
+
+            # Check if Proxmox host is reachable
+            res_ping = subprocess.run(["ping", "-c", "1", "-W", "2", "100.77.123.25"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if res_ping.returncode != 0:
+                self._send_json(400, {
+                    "error": "El servidor Proxmox VE (jj) está apagado. No hay máquinas en ejecución."
+                })
+                return
+
+            ssh_key = os.path.expanduser("~/.ssh/id_proxmox_shutdown")
+            subcmd = f"pct shutdown {vmid}" if vm_type == "lxc" else f"qm shutdown {vmid}"
+            cmd = [
+                "ssh", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=8",
+                "-o", "BatchMode=yes", "-i", ssh_key, "root@100.77.123.25", subcmd
+            ]
+            try:
+                p = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+                if p.returncode == 0:
+                    self._send_json(200, {
+                        "success": True,
+                        "vmid": vmid,
+                        "message": f"Orden de apagado ACPI enviada a VM/LXC {vmid}"
+                    })
+                else:
+                    self._send_json(500, {
+                        "error": f"Error ejecutando '{subcmd}' en Proxmox: {p.stderr.strip() or p.stdout.strip()}"
+                    })
+            except Exception as e:
+                self._send_json(500, {"error": f"Error de comunicación SSH con Proxmox: {e}"})
+            return
+
+        # ---------------------------------------------------------
         # Hardware Power Control & Eco (Strictly BaXoMs Root Only)
         # ---------------------------------------------------------
         if not self._verify_root():

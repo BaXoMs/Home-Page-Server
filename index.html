@@ -92,7 +92,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           </svg>
-          <span>Red & Router Archer C50</span>
+          <span>Red y Seguridad</span>
         </button>
 
         <button class="nav-item" data-view="raspberry" onclick="switchView('raspberry')">
@@ -489,6 +489,8 @@
                 <th>Nombre</th>
                 <th>Tipo</th>
                 <th>Estado</th>
+                <th>Control</th>
+                <th>Acceso</th>
                 <th>Cores</th>
                 <th>RAM</th>
                 <th>Disco</th>
@@ -499,8 +501,17 @@
               <tr class="row-active" id="pve-row-200">
                 <td><span class="badge-id">200</span></td>
                 <td><strong>coolify</strong></td>
-                <td>LXC</td>
+                <td><span class="badge-type lxc">LXC</span></td>
                 <td id="pve-status-cell-200"><span class="status-badge gray" id="pve-status-200">Comprobando...</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-200" onclick="controlVM(200, 'lxc', 'start')" title="Iniciar contenedor">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-200" onclick="controlVM(200, 'lxc', 'stop')" title="Apagar contenedor">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-terminal" onclick="openTerminalModal(200)" title="Ver accesos SSH, IPs y credenciales">💻 Conectar</button>
+                </td>
                 <td>2 Cores</td>
                 <td>4096 MB</td>
                 <td>40 GB</td>
@@ -509,8 +520,17 @@
               <tr class="row-active" id="pve-row-102">
                 <td><span class="badge-id">102</span></td>
                 <td><strong>opnsense-lab</strong></td>
-                <td>QEMU VM</td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
                 <td id="pve-status-cell-102"><span class="status-badge gray" id="pve-status-102">Comprobando...</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-102" onclick="controlVM(102, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-102" onclick="controlVM(102, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-terminal" onclick="openTerminalModal(102)" title="Ver accesos SSH, consola y credenciales">💻 Conectar</button>
+                </td>
                 <td>1 Core</td>
                 <td>512 MB</td>
                 <td>10 GB</td>
@@ -519,18 +539,36 @@
               <tr>
                 <td><span class="badge-id">107</span></td>
                 <td><strong>Nessus-Scanner</strong></td>
-                <td>QEMU VM</td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
                 <td><span class="status-badge gray">Aprovisionada</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-107" onclick="controlVM(107, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-107" onclick="controlVM(107, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-terminal" onclick="openTerminalModal(107)" title="Ver accesos SSH y credenciales">💻 Conectar</button>
+                </td>
                 <td>2 Cores</td>
-                <td>4096 MB (2G Balloon)</td>
+                <td>4096 MB (2G)</td>
                 <td>32 GB</td>
                 <td>Escáner Tenable Nessus Essentials</td>
               </tr>
               <tr>
                 <td><span class="badge-id">106</span></td>
                 <td><strong>Ollama-Qwen</strong></td>
-                <td>QEMU VM</td>
-                <td><span class="status-badge gray">Apagada (On-demand)</span></td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
+                <td><span class="status-badge gray">Apagada</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-106" onclick="controlVM(106, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-106" onclick="controlVM(106, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-terminal" onclick="openTerminalModal(106)" title="Ver accesos SSH y credenciales">💻 Conectar</button>
+                </td>
                 <td>4 Cores</td>
                 <td>8192 MB</td>
                 <td>72 GB</td>
@@ -539,8 +577,17 @@
               <tr>
                 <td><span class="badge-id">100</span></td>
                 <td><strong>PopOs</strong></td>
-                <td>QEMU VM</td>
-                <td><span class="status-badge gray">Apagada (On-demand)</span></td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
+                <td><span class="status-badge gray">Apagada</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-100" onclick="controlVM(100, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-100" onclick="controlVM(100, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-desktop" onclick="openDesktopVM(100, 'PopOs')" title="Abrir escritorio gráfico noVNC">🖥️ Abrir VM</button>
+                </td>
                 <td>4 Cores</td>
                 <td>8192 MB</td>
                 <td>150 GB</td>
@@ -549,28 +596,55 @@
               <tr>
                 <td><span class="badge-id">101</span></td>
                 <td><strong>Alma-linux</strong></td>
-                <td>QEMU VM</td>
-                <td><span class="status-badge gray">Apagada</span></td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
+                <td><span class="status-badge gray">Fallo Inst.</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-101" onclick="controlVM(101, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-101" onclick="controlVM(101, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-desktop" onclick="openDesktopVM(101, 'Alma-linux')" title="Abrir consola gráfica directa para resolver instalación">🖥️ Abrir VM</button>
+                </td>
                 <td>2 Cores</td>
                 <td>2048 MB</td>
                 <td>40 GB</td>
-                <td>Laboratorio Enterprise Linux</td>
+                <td>Laboratorio Enterprise Linux (Pendiente)</td>
               </tr>
               <tr>
                 <td><span class="badge-id">103</span></td>
                 <td><strong>kali-lab</strong></td>
-                <td>QEMU VM</td>
-                <td><span class="status-badge gray">Apagada</span></td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
+                <td><span class="status-badge gray">Fallo Inst.</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-103" onclick="controlVM(103, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-103" onclick="controlVM(103, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-desktop" onclick="openDesktopVM(103, 'kali-lab')" title="Abrir consola gráfica directa para resolver instalación">🖥️ Abrir VM</button>
+                </td>
                 <td>2 Cores</td>
                 <td>4096 MB</td>
                 <td>40 GB</td>
-                <td>Pentesting & Auditoría</td>
+                <td>Pentesting & Auditoría (Pendiente)</td>
               </tr>
               <tr>
                 <td><span class="badge-id">104</span></td>
                 <td><strong>Ubuntu-Server</strong></td>
-                <td>QEMU VM</td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
                 <td><span class="status-badge gray">Apagada</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-104" onclick="controlVM(104, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-104" onclick="controlVM(104, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-terminal" onclick="openTerminalModal(104)" title="Ver accesos SSH y credenciales">💻 Conectar</button>
+                </td>
                 <td>2 Cores</td>
                 <td>2048 MB</td>
                 <td>20 GB</td>
@@ -579,8 +653,17 @@
               <tr>
                 <td><span class="badge-id">105</span></td>
                 <td><strong>Windows-Server</strong></td>
-                <td>QEMU VM</td>
+                <td><span class="badge-type qemu">QEMU VM</span></td>
                 <td><span class="status-badge gray">Apagada</span></td>
+                <td>
+                  <div class="vm-actions-group">
+                    <button class="btn-vm-action btn-vm-start" id="btn-vm-start-105" onclick="controlVM(105, 'qemu', 'start')" title="Iniciar VM">▶ Prender</button>
+                    <button class="btn-vm-action btn-vm-stop" id="btn-vm-stop-105" onclick="controlVM(105, 'qemu', 'stop')" title="Apagar VM">⏹ Apagar</button>
+                  </div>
+                </td>
+                <td>
+                  <button class="btn-vm-action btn-vm-access-terminal" onclick="openTerminalModal(105)" title="Ver datos de conexión RDP y credenciales">💻 Conectar</button>
+                </td>
                 <td>2 Cores</td>
                 <td>4096 MB</td>
                 <td>50 GB</td>
@@ -591,30 +674,36 @@
         </div>
       </section>
 
-      <!-- VIEW 3: RED & ROUTER ARCHER C50 & NESSUS -->
+      <!-- VIEW 3: RED Y SEGURIDAD (ROUTER, OPNsense & NESSUS) -->
       <section id="view-security" class="content-view">
         <div class="server-hero">
           <div class="hero-left">
-            <div class="server-badge">Perímetro & Conectividad Física</div>
-            <h2 class="server-name">Router TP-Link Archer C50</h2>
-            <p class="server-specs">Gateway Principal · Puerta de Enlace: 192.168.0.1 · Dual Band AC1200</p>
+            <div class="server-badge">Perímetro, Firewall & Análisis de Seguridad</div>
+            <h2 class="server-name">Centro de Red y Seguridad</h2>
+            <p class="server-specs">Router TP-Link Archer C50 · Firewall OPNsense · Tenable Nessus Scanner</p>
           </div>
           <div class="hero-right">
-            <div class="stat-pill">
-              <span class="stat-label">Estado de Gateway</span>
-              <span class="stat-value text-green">Activo (LAN)</span>
-            </div>
-            <button onclick="openWorkspace('http://192.168.0.1', 'Router TP-Link Archer C50')" class="btn btn-primary">
-              Abrir Panel de Router
+            <button onclick="openWorkspace('http://192.168.0.1', 'Router TP-Link Archer C50')" class="btn btn-secondary">
+              🌐 Router Físico
+            </button>
+            <button onclick="openWorkspace('https://100.77.123.25:8443', 'Firewall OPNsense')" class="btn btn-secondary">
+              🛡️ OPNsense
+            </button>
+            <button onclick="openWorkspace('https://100.77.123.25:8834', 'Tenable Nessus Scanner')" class="btn btn-primary">
+              🔍 Nessus Scanner
             </button>
           </div>
         </div>
 
-        <div class="grid-2-cols">
-          <!-- Router Details Card -->
+        <div class="grid-3-cols">
+          <!-- Router TP-Link Archer C50 Card -->
           <div class="panel-card">
             <div class="panel-header">
-              <h3 class="panel-title">Parámetros del Router Archer C50</h3>
+              <div>
+                <h3 class="panel-title">Router Archer C50</h3>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">Gateway Físico LAN</span>
+              </div>
+              <span class="status-badge green">Activo (LAN)</span>
             </div>
             <div class="panel-body">
               <div class="detail-row">
@@ -623,24 +712,69 @@
               </div>
               <div class="detail-row">
                 <span class="detail-key">Rango DHCP:</span>
-                <span class="detail-val">192.168.0.100 - 192.168.0.250</span>
+                <span class="detail-val">192.168.0.100 - .250</span>
               </div>
               <div class="detail-row">
-                <span class="detail-key">DNS Primario asignado:</span>
-                <span class="detail-val text-cyan">192.168.0.200 (AdGuard en NodeR)</span>
+                <span class="detail-key">DNS Primario:</span>
+                <span class="detail-val text-cyan">192.168.0.200 (AdGuard)</span>
               </div>
               <div class="detail-row">
                 <span class="detail-key">WiFi Bandas:</span>
-                <span class="detail-val">2.4 GHz (300 Mbps) / 5 GHz (867 Mbps)</span>
+                <span class="detail-val">2.4 GHz / 5 GHz AC1200</span>
               </div>
+            </div>
+            <div class="panel-footer">
+              <button onclick="openWorkspace('http://192.168.0.1', 'Router TP-Link Archer C50')" class="btn btn-sm btn-cyan" style="width: 100%; justify-content: center;">
+                Abrir Panel Router ↗
+              </button>
             </div>
           </div>
 
-          <!-- Nessus Security Scanner Card -->
+          <!-- OPNsense Firewall & Router Card -->
           <div class="panel-card">
             <div class="panel-header">
-              <h3 class="panel-title">Tenable Nessus Essentials</h3>
-              <span class="status-badge gray">VM 107 en Proxmox</span>
+              <div>
+                <h3 class="panel-title">OPNsense Firewall</h3>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">VM 102 en Proxmox</span>
+              </div>
+              <span class="status-badge gray">On-demand</span>
+            </div>
+            <div class="panel-body">
+              <div class="detail-row">
+                <span class="detail-key">Puerto WebGUI:</span>
+                <span class="detail-val">:8443 (HTTPS)</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">IP Tailscale / LAN:</span>
+                <span class="detail-val text-cyan">100.77.123.25 / 192.168.0.102</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Perfil Hardware:</span>
+                <span class="detail-val">1 Core / 512 MB / 10 GB</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Propósito:</span>
+                <span class="detail-val">Firewall perimetral, ruteo y VLANs</span>
+              </div>
+            </div>
+            <div class="panel-footer" style="display: flex; gap: 8px;">
+              <button onclick="openWorkspace('https://100.77.123.25:8443', 'Firewall OPNsense')" class="btn btn-sm btn-cyan" style="flex: 1; justify-content: center;">
+                WebGUI ↗
+              </button>
+              <button onclick="openTerminalModal(102)" class="btn btn-sm btn-secondary" style="flex: 1; justify-content: center;">
+                SSH / Info 💻
+              </button>
+            </div>
+          </div>
+
+          <!-- Tenable Nessus Security Scanner Card -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div>
+                <h3 class="panel-title">Tenable Nessus</h3>
+                <span style="font-size: 0.72rem; color: var(--text-muted);">VM 107 en Proxmox</span>
+              </div>
+              <span class="status-badge gray">Aprovisionada</span>
             </div>
             <div class="panel-body">
               <div class="detail-row">
@@ -648,20 +782,25 @@
                 <span class="detail-val">:8834 (HTTPS)</span>
               </div>
               <div class="detail-row">
-                <span class="detail-key">Perfil de Recursos:</span>
-                <span class="detail-val">2 Cores / 4 GB RAM (Balloon 2 GB)</span>
+                <span class="detail-key">IP Tailscale:</span>
+                <span class="detail-val text-cyan">100.77.123.25:8834</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Perfil Hardware:</span>
+                <span class="detail-val">2 Cores / 4 GB (Balloon 2 GB)</span>
               </div>
               <div class="detail-row">
                 <span class="detail-key">Propósito:</span>
-                <span class="detail-val">Escaneo on-demand de vulnerabilidades de red</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-key">Consumo:</span>
-                <span class="detail-val text-green">Optimizada para no colapsar el Host</span>
+                <span class="detail-val">Escaneo y auditoría de vulnerabilidades</span>
               </div>
             </div>
-            <div class="panel-footer">
-              <a href="https://100.77.123.25:8834" target="_blank" class="link-btn">Ir a Consola Nessus</a>
+            <div class="panel-footer" style="display: flex; gap: 8px;">
+              <button onclick="openWorkspace('https://100.77.123.25:8834', 'Tenable Nessus Scanner')" class="btn btn-sm btn-cyan" style="flex: 1; justify-content: center;">
+                Consola ↗
+              </button>
+              <button onclick="openTerminalModal(107)" class="btn btn-sm btn-secondary" style="flex: 1; justify-content: center;">
+                SSH / Info 💻
+              </button>
             </div>
           </div>
         </div>
@@ -1280,6 +1419,73 @@
     </div>
   </div>
 
-  <script src="app.js?v=3.1"></script>
+  <!-- Modal Conexión Terminal / SSH para VMs -->
+  <div class="modal-backdrop" id="modal-vm-terminal">
+    <div class="modal-content glass-surface" style="max-width: 540px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: center; color: #818cf8; font-size: 1.1rem;">
+            💻
+          </div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h3 class="modal-title" id="vm-terminal-title" style="margin: 0; font-size: 1.05rem;">Máquina Virtual</h3>
+              <span class="badge-id" id="vm-terminal-id">ID --</span>
+              <span class="status-badge cyan" id="vm-terminal-type" style="font-size: 0.68rem; padding: 2px 6px;">QEMU</span>
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Credenciales y parámetros de conexión directa</span>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-vm-terminal')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 14px;">
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); margin-bottom: 6px; display: block;">Comando de Conexión Rápida</label>
+          <div class="ssh-command-box" style="display: flex; align-items: center; justify-content: space-between; background: rgba(8, 12, 22, 0.8); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 10px 14px; gap: 10px;">
+            <code id="vm-terminal-ssh-cmd" style="font-family: 'JetBrains Mono', monospace; font-size: 0.84rem; color: var(--accent-cyan); word-break: break-all;">ssh user@host</code>
+            <button class="btn btn-sm btn-cyan" onclick="copySshCommand()" id="btn-copy-ssh-cmd" style="white-space: nowrap; flex-shrink: 0;" title="Copiar al portapapeles">
+              Copiar
+            </button>
+          </div>
+        </div>
+
+        <div class="credentials-box" style="background: rgba(14, 22, 38, 0.6); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px 14px; margin-bottom: 16px;">
+          <div class="detail-row" style="margin-bottom: 8px;">
+            <span class="detail-key">Usuario:</span>
+            <span class="detail-val" id="vm-terminal-user" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #38bdf8;">--</span>
+          </div>
+          <div class="detail-row" style="margin-bottom: 8px;">
+            <span class="detail-key">Contraseña:</span>
+            <span class="detail-val" id="vm-terminal-pass" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #fbbf24;">--</span>
+          </div>
+          <div class="detail-row" style="margin-bottom: 8px;">
+            <span class="detail-key">IP Tailscale:</span>
+            <span class="detail-val" id="vm-terminal-tailscale" style="font-family: 'JetBrains Mono', monospace; color: #a5f3fc;">--</span>
+          </div>
+          <div class="detail-row" style="margin-bottom: 8px;">
+            <span class="detail-key">IP Red LAN:</span>
+            <span class="detail-val" id="vm-terminal-lan" style="font-family: 'JetBrains Mono', monospace; color: #cbd5e1;">--</span>
+          </div>
+          <div class="detail-row" style="margin-bottom: 8px;">
+            <span class="detail-key">Puerto / Servicio:</span>
+            <span class="detail-val" id="vm-terminal-port">--</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Notas de Servicio:</span>
+            <span class="detail-val text-muted" id="vm-terminal-notes" style="font-size: 0.8rem;">--</span>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 14px; gap: 10px;">
+          <button type="button" id="vm-terminal-novnc-btn" class="btn btn-secondary" style="font-size: 0.8rem;">
+            🖥️ Abrir Consola noVNC (Proxmox) ↗
+          </button>
+          <button class="btn btn-secondary" onclick="closeModal('modal-vm-terminal')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=3.2"></script>
 </body>
 </html>

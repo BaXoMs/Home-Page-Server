@@ -39,8 +39,8 @@ const viewTitles = {
     subtitle: 'Hipervisor central, recursos de cómputo y estado de máquinas virtuales / LXCs'
   },
   security: {
-    title: 'Red & Router TP-Link Archer C50',
-    subtitle: 'Gateway principal, conectividad física LAN/WiFi y escáner de seguridad'
+    title: 'Red y Seguridad',
+    subtitle: 'Perímetro, Gateway, Enrutamiento Avanzado y Auditoría de Vulnerabilidades'
   },
   raspberry: {
     title: 'Raspberry Pi 4 (NodeR)',
@@ -297,6 +297,156 @@ const SERVICES_MAP = {
     desc: 'Escáner de vulnerabilidades y auditoría de seguridad perimetral.',
     note: '🛡️ Puerto :8834 (HTTPS autofirmado).',
     canEmbed: false
+  },
+  'opnsense': {
+    name: 'OPNsense Firewall & Router',
+    node: 'Proxmox VE (VM 102)',
+    tailscale: 'https://100.77.123.25:8443',
+    lan: 'https://192.168.0.102',
+    desc: 'Firewall de código abierto, enrutamiento avanzado, filtrado de paquetes y VPN.',
+    note: '🛡️ Consola web OPNsense.',
+    canEmbed: false
+  }
+};
+
+// Directory of Proxmox VMs & Containers with Credentials & Connection Info
+const VM_DIRECTORY = {
+  200: {
+    id: 200,
+    name: 'coolify',
+    type: 'lxc',
+    mode: 'terminal',
+    os: 'Debian 12 (LXC)',
+    desc: 'Coolify PaaS, n8n, Postgres, Redis',
+    user: 'root',
+    pass: 'EmM29Sm26',
+    ip_tailscale: '100.120.169.85:8000',
+    ip_lan: '192.168.0.112:8000',
+    port: '8000 (Web PaaS) / 22 (SSH)',
+    ssh_cmd: 'ssh root@100.120.169.85',
+    novnc_url: 'https://100.77.123.25:8006/?console=lxc&novnc=1&vmid=200&node=jj'
+  },
+  102: {
+    id: 102,
+    name: 'opnsense-lab',
+    type: 'qemu',
+    mode: 'terminal',
+    os: 'FreeBSD / OPNsense',
+    desc: 'Router / Firewall OPNsense con IDS/IPS y VPN',
+    user: 'root',
+    pass: 'opnsense (default)',
+    ip_tailscale: '100.77.123.25:8443',
+    ip_lan: '192.168.0.102',
+    port: '8443 (HTTPS) / 22 (SSH)',
+    ssh_cmd: 'ssh root@192.168.0.102',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=102&node=jj'
+  },
+  107: {
+    id: 107,
+    name: 'Nessus-Scanner',
+    type: 'qemu',
+    mode: 'terminal',
+    os: 'Ubuntu 22.04 LTS',
+    desc: 'Escáner de vulnerabilidades Tenable Nessus Essentials',
+    user: 'fireman',
+    pass: 'EmM29Sm26',
+    ip_tailscale: '100.77.123.25:8834',
+    ip_lan: '192.168.0.104:8834',
+    port: '8834 (Web) / 22 (SSH)',
+    ssh_cmd: 'ssh fireman@100.77.123.25',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=107&node=jj'
+  },
+  106: {
+    id: 106,
+    name: 'Ollama-Qwen',
+    type: 'qemu',
+    mode: 'terminal',
+    os: 'Ubuntu 22.04 (GPU GTX 1650S)',
+    desc: 'Inferencia local IA (Ollama + Qwen) y macOS Docker-OSX',
+    user: 'fireman',
+    pass: 'EmM29Sm26',
+    ip_tailscale: '100.77.123.25:11434',
+    ip_lan: '192.168.0.104:11434',
+    port: '11434 (API Ollama) / 22 (SSH)',
+    ssh_cmd: 'ssh fireman@100.77.123.25',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=106&node=jj'
+  },
+  100: {
+    id: 100,
+    name: 'PopOs',
+    type: 'qemu',
+    mode: 'desktop',
+    os: 'Pop!_OS 22.04 LTS (NVIDIA Dev Desktop)',
+    desc: 'Entorno de Desarrollo Linux con aceleración gráfica GPU',
+    user: 'baxoms',
+    pass: 'EmM29Sm26',
+    ip_tailscale: '100.77.123.25',
+    ip_lan: '192.168.0.104',
+    port: 'Consola noVNC / 22 (SSH)',
+    ssh_cmd: 'ssh baxoms@100.77.123.25',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=100&node=jj'
+  },
+  101: {
+    id: 101,
+    name: 'Alma-linux',
+    type: 'qemu',
+    mode: 'desktop',
+    os: 'AlmaLinux 9 Enterprise (GUI Desktop)',
+    desc: 'Laboratorio Enterprise Linux (Fallo de instalación pendiente)',
+    user: 'Pendiente de instalación',
+    pass: 'Instalación pendiente',
+    is_pending_install: true,
+    ip_tailscale: '100.77.123.25',
+    ip_lan: '192.168.0.104',
+    port: 'Consola noVNC Gráfica',
+    ssh_cmd: '# Acceso gráfico requerido para finalizar instalación',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=101&node=jj'
+  },
+  103: {
+    id: 103,
+    name: 'kali-lab',
+    type: 'qemu',
+    mode: 'desktop',
+    os: 'Kali Linux Rolling (GUI Desktop)',
+    desc: 'Laboratorio de Pentesting y Seguridad (Fallo de instalación pendiente)',
+    user: 'Pendiente de instalación',
+    pass: 'Instalación pendiente',
+    is_pending_install: true,
+    ip_tailscale: '100.77.123.25',
+    ip_lan: '192.168.0.104',
+    port: 'Consola noVNC Gráfica',
+    ssh_cmd: '# Acceso gráfico requerido para finalizar instalación',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=103&node=jj'
+  },
+  104: {
+    id: 104,
+    name: 'Ubuntu-Server',
+    type: 'qemu',
+    mode: 'terminal',
+    os: 'Ubuntu Server 22.04 LTS',
+    desc: 'Servidor genérico de infraestructura y microservicios',
+    user: 'fireman',
+    pass: 'EmM29Sm26',
+    ip_tailscale: '100.77.123.25',
+    ip_lan: '192.168.0.104',
+    port: '22 (SSH)',
+    ssh_cmd: 'ssh fireman@100.77.123.25',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=104&node=jj'
+  },
+  105: {
+    id: 105,
+    name: 'Windows-Server',
+    type: 'qemu',
+    mode: 'terminal',
+    os: 'Windows Server 2022 Datacenter',
+    desc: 'Laboratorio Windows Active Directory, DNS y GPO',
+    user: 'Administrator',
+    pass: 'EmM29Sm26',
+    ip_tailscale: '100.77.123.25:3389',
+    ip_lan: '192.168.0.104:3389',
+    port: '3389 (RDP / Escritorio Remoto)',
+    ssh_cmd: 'mstsc /v:100.77.123.25:3389',
+    novnc_url: 'https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=105&node=jj'
   }
 };
 
@@ -1517,6 +1667,103 @@ window.handleDeleteUser = async function(username) {
   } catch (err) {
     alert(err.message);
   }
+};
+
+// ---------------------------------------------------------
+// Proxmox VM Power Control & Access Handlers
+// ---------------------------------------------------------
+
+window.controlVM = async function(vmid, type, action) {
+  const isStart = (action === 'start');
+  const actionText = isStart ? 'iniciar' : 'apagar';
+  const vm = VM_DIRECTORY[vmid] || { name: `VM ${vmid}` };
+  
+  if (!confirm(`¿Confirmás ${actionText} la máquina '${vm.name}' (ID ${vmid})?`)) return;
+
+  const btn = document.getElementById(`btn-vm-${action}-${vmid}`);
+  const origText = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = isStart ? '⏳...' : '⏳...';
+  }
+
+  const token = localStorage.getItem('hps_token');
+  try {
+    const res = await fetch(getApiUrl(`/api/power/vm/${action}`), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ vmid: Number(vmid), type: type || 'qemu' })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `Error al ${actionText} la VM`);
+    alert(`✅ ${data.message || 'Operación completada con éxito.'}`);
+  } catch (err) {
+    alert(`❌ ${err.message}`);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = origText;
+    }
+  }
+};
+
+window.openDesktopVM = function(vmid, name) {
+  const vm = VM_DIRECTORY[vmid];
+  const novnc = vm ? vm.novnc_url : `https://100.77.123.25:8006/?console=kvm&novnc=1&vmid=${vmid}&node=jj`;
+  window.open(novnc, '_blank', 'noopener,noreferrer');
+};
+
+window.openTerminalModal = function(vmid) {
+  const vm = VM_DIRECTORY[vmid];
+  if (!vm) return;
+
+  const titleEl = document.getElementById('vm-terminal-title');
+  const idBadge = document.getElementById('vm-terminal-id');
+  const typeBadge = document.getElementById('vm-terminal-type');
+  const sshCmdEl = document.getElementById('vm-terminal-ssh-cmd');
+  const userEl = document.getElementById('vm-terminal-user');
+  const passEl = document.getElementById('vm-terminal-pass');
+  const ipTailscaleEl = document.getElementById('vm-terminal-tailscale');
+  const ipLanEl = document.getElementById('vm-terminal-lan');
+  const portEl = document.getElementById('vm-terminal-port');
+  const notesEl = document.getElementById('vm-terminal-notes');
+  const novncBtn = document.getElementById('vm-terminal-novnc-btn');
+
+  if (titleEl) titleEl.textContent = vm.name;
+  if (idBadge) idBadge.textContent = `ID ${vm.id}`;
+  if (typeBadge) typeBadge.textContent = vm.type.toUpperCase();
+  if (sshCmdEl) sshCmdEl.textContent = vm.ssh_cmd;
+  if (userEl) userEl.textContent = vm.user;
+  if (passEl) passEl.textContent = vm.pass;
+  if (ipTailscaleEl) ipTailscaleEl.textContent = vm.ip_tailscale;
+  if (ipLanEl) ipLanEl.textContent = vm.ip_lan;
+  if (portEl) portEl.textContent = vm.port;
+  if (notesEl) notesEl.textContent = vm.desc;
+  if (novncBtn) {
+    novncBtn.onclick = () => window.open(vm.novnc_url, '_blank', 'noopener,noreferrer');
+  }
+
+  openModal('modal-vm-terminal');
+};
+
+window.copySshCommand = function() {
+  const sshCmdEl = document.getElementById('vm-terminal-ssh-cmd');
+  const copyBtn = document.getElementById('btn-copy-ssh-cmd');
+  if (!sshCmdEl) return;
+
+  const text = sshCmdEl.textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    if (copyBtn) {
+      const orig = copyBtn.innerHTML;
+      copyBtn.innerHTML = '✅ ¡Copiado!';
+      setTimeout(() => { copyBtn.innerHTML = orig; }, 2000);
+    }
+  }).catch(() => {
+    alert('No se pudo copiar automáticamente. Por favor seleccioná y copiá el comando manualmente.');
+  });
 };
 
 
