@@ -537,6 +537,58 @@ async function pollServerHealth() {
       pveConsoleBtn.disabled = !isPveUp;
       pveConsoleBtn.style.opacity = isPveUp ? '1' : '0.5';
     }
+
+    // Eco Mode Telemetry (Raspberry Pi Night Schedule 23:00 - 11:00)
+    if (data.eco) {
+      const isNight = data.eco.mode === 'night';
+      const rpiBadge = document.getElementById('rpi-status-badge');
+      const rpiMeta = document.getElementById('rpi-status-meta');
+      const rpiCount = document.getElementById('rpi-docker-count');
+      const ecoBanner = document.getElementById('eco-sleep-banner');
+      const ecoIcon = document.getElementById('eco-banner-icon');
+      const ecoTitle = document.getElementById('eco-banner-title-text');
+      const ecoBadge = document.getElementById('eco-badge');
+      const ecoDesc = document.getElementById('eco-banner-desc');
+      const ecoBtn = document.getElementById('btn-toggle-eco');
+
+      if (rpiBadge) {
+        rpiBadge.className = isNight ? 'status-badge blue' : 'status-badge green';
+        rpiBadge.innerText = isNight ? 'Eco Sleep · 🌙 Noche' : 'Online · ☀️ Día';
+      }
+      if (rpiMeta) {
+        rpiMeta.innerText = isNight
+          ? 'Modo Ahorro Nocturno (23:00-11:00) · Swap Activo'
+          : 'Nodo 24/7 · Swap: 2 GB Activo';
+      }
+      if (rpiCount) {
+        const paused = data.eco.paused_count || 0;
+        rpiCount.innerText = isNight 
+          ? `3 Activos (${paused} Pausados)` 
+          : '6 Contenedores';
+      }
+      if (ecoBanner) {
+        if (isNight) ecoBanner.classList.add('night-mode');
+        else ecoBanner.classList.remove('night-mode');
+      }
+      if (ecoIcon) ecoIcon.innerText = isNight ? '🌙' : '☀️';
+      if (ecoTitle) {
+        ecoTitle.innerText = isNight
+          ? `Modo Noche Activo (${data.eco.paused_count || 0} Contenedores en Eco Sleep)`
+          : 'Modo Día Activo (Todos los servicios en línea)';
+      }
+      if (ecoBadge) {
+        ecoBadge.className = isNight ? 'status-badge purple' : 'status-badge blue';
+        ecoBadge.innerText = isNight ? 'Ahorro de Energía (23:00 a 11:00)' : '23:00 a 11:00 Automático';
+      }
+      if (ecoDesc) {
+        ecoDesc.innerText = isNight
+          ? 'Contenedores secundarios pausados (Vaultwarden, Portainer, Uptime-Kuma) liberando CPU. AdGuard DNS y la Home Page siguen respondiendo 24/7. A las 11:00 AM se reanudan automáticamente.'
+          : 'A las 23:00 se pausan automáticamente los contenedores pesados (Portainer, Vaultwarden, Uptime) para ahorro de energía y CPU. A las 11:00 se reactivan. AdGuard DNS y la Home Page permanecen siempre activos 24/7.';
+      }
+      if (ecoBtn) {
+        ecoBtn.innerText = isNight ? '☀️ Forzar Modo Día Ahora' : '🌙 Forzar Modo Noche Ahora';
+      }
+    }
   } catch (e) {
     console.warn('[PowerStatus] Telemetry poll failed:', e);
   }
@@ -868,6 +920,32 @@ window.executeRpiShutdown = async function() {
     if (confirmBtn) {
       confirmBtn.disabled = false;
       confirmBtn.innerText = '⚠️ Reintentar Apagado';
+    }
+  }
+};
+
+window.toggleEcoMode = async function() {
+  const btn = document.getElementById('btn-toggle-eco');
+  const originalText = btn ? btn.innerText : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = '⏳ Aplicando...';
+  }
+
+  try {
+    const res = await fetch('/api/power/eco/toggle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cambiar modo');
+    await pollServerHealth();
+  } catch (err) {
+    alert('Error en Eco Sleep: ' + err.message);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
     }
   }
 };

@@ -152,10 +152,10 @@
           <div class="kpi-card" onclick="switchView('raspberry')">
             <div class="kpi-header">
               <span class="kpi-label">Raspberry Pi (NodeR)</span>
-              <span class="status-badge green">Online</span>
+              <span class="status-badge green" id="rpi-status-badge">Online · ☀️ Día</span>
             </div>
             <div class="kpi-value text-cyan" id="rpi-docker-count">6 Contenedores</div>
-            <div class="kpi-meta">Nodo 24/7 · Swap: 2 GB Activo</div>
+            <div class="kpi-meta" id="rpi-status-meta">Nodo 24/7 · Swap: 2 GB Activo</div>
           </div>
 
           <div class="kpi-card">
@@ -577,6 +577,25 @@
               ⚠️ Apagar Nodo Edge
             </button>
           </div>
+        </div>
+
+        <!-- Eco Sleep Mode & Night Schedule Banner (23:00 - 11:00) -->
+        <div class="eco-sleep-banner" id="eco-sleep-banner">
+          <div class="eco-banner-info">
+            <span class="eco-banner-icon" id="eco-banner-icon">☀️</span>
+            <div>
+              <div class="eco-banner-title">
+                <strong id="eco-banner-title-text">Modo Día Activo (Todos los servicios en línea)</strong>
+                <span class="status-badge blue" id="eco-badge">23:00 a 11:00 Automático</span>
+              </div>
+              <p class="eco-banner-desc" id="eco-banner-desc">
+                A las 23:00 se pausan automáticamente los contenedores pesados (Portainer, Vaultwarden, Uptime) para ahorro de energía y CPU. A las 11:00 se reactivan. AdGuard DNS y la Home Page permanecen siempre activos 24/7.
+              </p>
+            </div>
+          </div>
+          <button type="button" onclick="toggleEcoMode()" class="btn btn-sm btn-secondary" id="btn-toggle-eco">
+            🌙 Forzar Modo Noche Ahora
+          </button>
         </div>
 
         <h3 class="section-title">Contenedores Docker Activos en la Pi</h3>

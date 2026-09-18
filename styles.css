@@ -725,6 +725,58 @@ body {
   border-radius: 4px;
 }
 
+/* Eco Sleep Banner */
+.eco-sleep-banner {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.eco-sleep-banner.night-mode {
+  border-color: rgba(168, 85, 247, 0.4);
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.eco-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.eco-banner-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+
+.eco-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.eco-banner-title strong {
+  color: #ffffff;
+  font-size: 0.95rem;
+}
+
+.eco-banner-desc {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin: 0;
+}
+
 /* 2 Columns Grid */
 .grid-2-cols {
   display: grid;
