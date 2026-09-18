@@ -13,6 +13,15 @@ const DEFAULT_CONFIG = {
 
 let config = { ...DEFAULT_CONFIG };
 
+// Dynamic API Resolver: Seamless local dev support (e.g. VS Code Live Server on localhost/127.0.0.1)
+function getApiUrl(path) {
+  const isLocalDev = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1' ||
+                     window.location.protocol === 'file:';
+  const base = isLocalDev ? 'http://100.120.34.14:3006' : '';
+  return `${base}${path}`;
+}
+
 // Network traffic time series data
 const trafficPoints = {
   down: [25, 38, 42, 35, 68, 84, 52, 48],
@@ -484,7 +493,7 @@ window.closeModal = function(id, force = false) {
 // Poll real-time hardware & server health via Power Bridge
 async function pollServerHealth() {
   try {
-    const res = await fetch('/api/power/status', { cache: 'no-store' });
+    const res = await fetch(getApiUrl('/api/power/status'), { cache: 'no-store' });
     if (!res.ok) {
       applyPveState(false);
       return;
@@ -833,7 +842,7 @@ let cachedPowerToken = '';
 async function getPowerToken() {
   if (cachedPowerToken) return cachedPowerToken;
   try {
-    const res = await fetch('/api/power/token');
+    const res = await fetch(getApiUrl('/api/power/token'));
     if (res.ok) {
       const data = await res.json();
       if (data.token) {
@@ -857,7 +866,7 @@ window.executeProxmoxShutdown = async function() {
 
   try {
     const token = await getPowerToken();
-    const res = await fetch('/api/power/proxmox', {
+    const res = await fetch(getApiUrl('/api/power/proxmox'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -930,7 +939,7 @@ window.executeRpiShutdown = async function() {
 
   try {
     const token = await getPowerToken();
-    const res = await fetch('/api/power/rpi', {
+    const res = await fetch(getApiUrl('/api/power/rpi'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -992,7 +1001,7 @@ window.toggleEcoMode = async function() {
 
   try {
     const token = await getPowerToken();
-    const res = await fetch('/api/power/eco/toggle', {
+    const res = await fetch(getApiUrl('/api/power/eco/toggle'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1072,7 +1081,7 @@ async function checkAuthSession() {
   }
 
   try {
-    const res = await fetch('/api/power/auth/session', {
+    const res = await fetch(getApiUrl('/api/power/auth/session'), {
       headers: { 'Authorization': `Bearer ${token}` },
       cache: 'no-store'
     });
@@ -1202,7 +1211,7 @@ window.handleGatekeeperLogin = async function(e) {
   }
 
   try {
-    const res = await fetch('/api/power/auth/login', {
+    const res = await fetch(getApiUrl('/api/power/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
@@ -1314,7 +1323,7 @@ window.handleSubmitChangePassword = async function(e, isForced) {
 
   const token = localStorage.getItem('hps_token');
   try {
-    const res = await fetch('/api/power/auth/change-password', {
+    const res = await fetch(getApiUrl('/api/power/auth/change-password'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1359,7 +1368,7 @@ window.handleLogoutClick = async function() {
     const token = localStorage.getItem('hps_token');
     try {
       if (token) {
-        await fetch('/api/power/auth/logout', {
+        await fetch(getApiUrl('/api/power/auth/logout'), {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -1409,7 +1418,7 @@ window.loadUsersList = async function() {
 
   const token = localStorage.getItem('hps_token');
   try {
-    const res = await fetch('/api/power/users', {
+    const res = await fetch(getApiUrl('/api/power/users'), {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
@@ -1463,7 +1472,7 @@ window.handleCreateUser = async function(e) {
 
   const token = localStorage.getItem('hps_token');
   try {
-    const res = await fetch('/api/power/users', {
+    const res = await fetch(getApiUrl('/api/power/users'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1494,7 +1503,7 @@ window.handleDeleteUser = async function(username) {
   if (!confirm(`¿Eliminar al usuario secundario '${username}'?`)) return;
   const token = localStorage.getItem('hps_token');
   try {
-    const res = await fetch('/api/power/users/delete', {
+    const res = await fetch(getApiUrl('/api/power/users/delete'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
